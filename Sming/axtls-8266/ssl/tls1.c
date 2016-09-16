@@ -140,6 +140,35 @@ void DISPLAY_BYTES(SSL *ssl, const char *format,
 #endif
 
 /**
+ * Allocates new SSL extensions structure and returns pointer to it
+ *
+ */
+EXP_FUNC SSL_EXTENSIONS * STDCALL ssl_ext_new()
+{
+	SSL_EXTENSIONS *ssl_ext = (SSL_EXTENSIONS *)malloc(sizeof(SSL_EXTENSIONS));
+	ssl_ext->max_fragment_size = 0;
+	ssl_ext->host_name = NULL;
+
+	return ssl_ext;
+}
+
+/**
+ * Allocates new SSL extensions structure and returns pointer to it
+ *
+ */
+EXP_FUNC void STDCALL ssl_ext_free(SSL_EXTENSIONS *ssl_ext)
+{
+	if(ssl_ext == NULL ) {
+		return;
+	}
+
+	if(ssl_ext->host_name != NULL) {
+		free(ssl_ext->host_name);
+	}
+	free(ssl_ext);
+}
+
+/**
  * Establish a new client/server context.
  */
 EXP_FUNC SSL_CTX *STDCALL ssl_ctx_new(uint32_t options, int num_sessions)
@@ -257,7 +286,8 @@ EXP_FUNC void STDCALL ssl_free(SSL *ssl)
     disposable_free(ssl);
     certificate_free(ssl);
     free(ssl->bm_all_data);
-    free(ssl->host_name);
+    ssl_ext_free(ssl->extensions);
+    ssl->extensions = NULL;
     free(ssl);
 }
 
@@ -634,8 +664,6 @@ SSL *ssl_new(SSL_CTX *ssl_ctx, int client_fd)
 
     ssl->encrypt_ctx = malloc(sizeof(AES_CTX));
     ssl->decrypt_ctx = malloc(sizeof(AES_CTX));
-
-    ssl->host_name = NULL;
 
     SSL_CTX_UNLOCK(ssl_ctx->mutex);
     return ssl;
@@ -1498,6 +1526,9 @@ int increase_bm_data_size(SSL *ssl, size_t size)
 {
     if (ssl->max_plain_length == RT_MAX_PLAIN_LENGTH) {
         return SSL_OK;
+    }
+    if (ssl->can_free_certificates) {
+        certificate_free(ssl);
     }
     size_t required = (size + 1023) & ~(1023); // round up to 1k
     required = (required < RT_MAX_PLAIN_LENGTH) ? required : RT_MAX_PLAIN_LENGTH;

@@ -141,7 +141,7 @@ protected:
 	uint8_t *sslFingerprint=null;
 	boolean sslConnected = false;
 	uint32_t sslOptions=0;
-	String hostname = "";
+	SSL_EXTENSIONS *ssl_ext=NULL;
 	SSLKeyCertPair clientKeyCert;
 	boolean freeClientKeyCert = false;
 };

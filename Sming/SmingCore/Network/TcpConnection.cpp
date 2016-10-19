@@ -49,6 +49,7 @@ bool TcpConnection::connect(String server, int port, boolean useSsl /* = false *
 	this->useSsl = useSsl;
 	this->sslOptions |= sslOptions;
 
+#ifdef ENABLE_SSL
 	if(ssl_ext == NULL) {
 		ssl_ext = ssl_ext_new();
 		ssl_ext->host_name = (char *)malloc(server.length() + 1);
@@ -56,6 +57,7 @@ bool TcpConnection::connect(String server, int port, boolean useSsl /* = false *
 
 		ssl_ext->max_fragment_size = 4*1024; // 4K max size
 	}
+#endif
 
 	debugf("connect to: %s", server.c_str());
 	canSend = false; // Wait for connection

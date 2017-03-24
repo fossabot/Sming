@@ -429,8 +429,8 @@ err_t TcpConnection::staticOnConnected(void *arg, tcp_pcb *tcp, err_t err)
 			}
 
 			con->ssl = ssl_client_new(con->sslContext, clientfd,
-									 	 (con->sslSessionId ? con->sslSessionId->value : NULL),
-										 (con->sslSessionId ? con->sslSessionId->length: 0),
+									 	 (con->sslSessionId != NULL ? con->sslSessionId->value : NULL),
+										 (con->sslSessionId != NULL ? con->sslSessionId->length: 0),
 										 con->ssl_ext
 									 );
 			if(ssl_handshake_status(con->ssl)!=SSL_OK) {

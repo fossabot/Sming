@@ -74,6 +74,23 @@ bool TcpClient::sendString(String data, bool forceCloseAfterSent /* = false*/)
 	return send(data.c_str(), data.length(), forceCloseAfterSent);
 }
 
+bool TcpClient::send(IDataSourceStream* inputStream, bool forceCloseAfterSent /* = false*/)
+{
+	if (state != eTCS_Connecting && state != eTCS_Connected) return false;
+
+	do {
+		int len = 256;
+		char data[len];
+		len = inputStream->readMemoryBlock(data, len);
+		inputStream->seek(max(len, 0));
+
+		send(data, len, (inputStream->isFinished() ? asyncCloseAfterSent: false));
+
+	} while(!inputStream->isFinished());
+
+	return true;
+}
+
 bool TcpClient::send(const char* data, uint16_t len, bool forceCloseAfterSent /* = false*/)
 {
 	if (state != eTCS_Connecting && state != eTCS_Connected) return false;

@@ -35,12 +35,13 @@ class SimpleQueue: public FIFO<T, rawSize> {
 	virtual T& operator[](unsigned int) { }
 };
 
-enum HttpClientMode
+
+enum WebClientMode
 {
-	eHCM_String = 0,
-	eHCM_File, // << Deprecated! Use eHCM_Stream stream instead
-	eHCM_Stream,
-	eHCM_UserDefined
+	eWCM_String = 0,
+	eWCM_File, // << Deprecated! Use eWCM_Stream stream instead
+	eWCM_Stream,
+	eWCM_UserDefined
 };
 
 /**
@@ -129,6 +130,7 @@ public:
 #ifdef ENABLE_SSL
  	WebRequest* setSslOptions(uint32_t sslOptions);
  	uint32_t getSslOptions();
+ 	WebRequest* pinCertificate(const uint8_t *fingerprint, SslFingerprintType type);
 #endif
 
 	WebRequest* setBody(const String& body);
@@ -158,7 +160,10 @@ protected:
 
 	IOutputStream *outputStream=NULL;
 
+#ifdef ENABLE_SSL
 	uint32_t sslOptions = 0;
+	SSLFingerprints sslFingerprint;
+#endif
 };
 
 
@@ -229,7 +234,7 @@ private:
 	static int staticOnMessageComplete(http_parser* parser);
 
 protected:
-	HttpClientMode mode;
+	WebClientMode mode;
 	String responseStringData;
 
 	RequestQueue* waitingQueue;

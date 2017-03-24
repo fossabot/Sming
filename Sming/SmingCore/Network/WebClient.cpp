@@ -46,6 +46,51 @@ WebRequest* WebRequest::setSslOptions(uint32_t sslOptions) {
 uint32_t WebRequest::getSslOptions() {
  	return sslOptions;
 }
+
+WebRequest* WebRequest::pinCertificate(const uint8_t *fingerprint, SslFingerprintType type) {
+	int length = 0;
+	uint8_t *localStore;
+
+	switch(type) {
+	case eSFT_CertSha1:
+		localStore = sslFingerprint.certSha1;
+		length = SHA1_SIZE;
+		break;
+	case eSFT_PkSha256:
+		localStore = sslFingerprint.pkSha256;
+		length = SHA256_SIZE;
+		break;
+	default:
+		debugf("Unsupported SSL certificate fingerprint type");
+	}
+
+	if(!length) {
+		debugf("Cannot set certificate pinning. Wrong type");
+		return this;
+	}
+
+	if(localStore) {
+		delete[] localStore;
+	}
+	localStore = new uint8_t[length];
+	if(localStore == NULL) {
+		debugf("Cannot set certificate pinning. Not enought memory");
+		return this;
+	}
+
+	memcpy(localStore, fingerprint, length);
+
+	switch(type) {
+		case eSFT_CertSha1:
+			sslFingerprint.certSha1 = localStore;
+			break;
+		case eSFT_PkSha256:
+			sslFingerprint.pkSha256 = localStore;
+			break;
+	}
+
+	return this;
+}
 #endif
 
 WebRequest* WebRequest::setBody(const String& body) {
@@ -80,7 +125,7 @@ WebRequest* WebRequest::onRequestComplete(RequestCompletedDelegate delegateFunct
 }
 
 // HttpConnection
-HttpConnection::HttpConnection(RequestQueue* queue): TcpClient(false), mode(eHCM_String) {
+HttpConnection::HttpConnection(RequestQueue* queue): TcpClient(false), mode(eWCM_String) {
 	this->waitingQueue = queue;
 }
 
@@ -135,7 +180,7 @@ DateTime HttpConnection::getServerDate()
 
 String HttpConnection::getResponseString()
 {
-	if (mode == eHCM_String)
+	if (mode == eWCM_String)
 		return responseStringData;
 	else
 		return "";
@@ -184,10 +229,10 @@ int HttpConnection::staticOnMessageBegin(http_parser* parser)
 	}
 
 	if(connection->currentRequest->outputStream != NULL) {
-		connection->mode = eHCM_Stream;
+		connection->mode = eWCM_Stream;
 	}
 	else {
-		connection->mode = eHCM_String;
+		connection->mode = eWCM_String;
 	}
 
 	return 0;
@@ -519,6 +564,12 @@ bool WebClient::send(WebRequest* request) {
 		}
 
 		httpConnectionPool[cacheKey]->addSslOptions(request->getSslOptions());
+		if(request->sslFingerprint.certSha1 != NULL) {
+			httpConnectionPool[cacheKey]->pinCertificate(request->sslFingerprint.certSha1, eSFT_CertSha1);
+		}
+		if(request->sslFingerprint.pkSha256 != NULL) {
+			httpConnectionPool[cacheKey]->pinCertificate(request->sslFingerprint.pkSha256, eSFT_PkSha256);
+		}
 		httpConnectionPool[cacheKey]->sslSessionId = sslSessionIdPool[cacheKey];
 	}
 #endif

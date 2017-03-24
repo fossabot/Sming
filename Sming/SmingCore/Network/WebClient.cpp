@@ -522,11 +522,18 @@ void HttpConnection::onError(err_t err) {
 
 void HttpConnection::cleanup() {
 	// TODO: clean the current request
+	reset();
+
 	// TODO: clean the current response
 
 	// if there are requests in the executionQueue -> move them back to the waiting queue
 	for(int i=0; i < executionQueue.count(); i++) {
 		waitingQueue->enqueue(executionQueue.dequeue());
+	}
+
+	if(parser != NULL) {
+		delete parser;
+		parser = NULL;
 	}
 }
 

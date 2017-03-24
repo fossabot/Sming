@@ -80,8 +80,6 @@ enum WebClientMode
  * 			->setBody(uint8_t *rawData)
  * 			->setBody(IDataStream *stream)
  *
- * 			->onBodyData(typedef <bool <http_parser *parser, const char *at, size_t length> RequestBodyDelegate)
- *
  * 			->onHeadersComplete(typedef <bool<http_parser* parser, HashMap<String,String> headers> RequestHeadersCompletedDelegate)
  * 			->onRequestComplete(http_parser* parser)
  * 			)

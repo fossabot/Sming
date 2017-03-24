@@ -428,7 +428,11 @@ err_t TcpConnection::staticOnConnected(void *arg, tcp_pcb *tcp, err_t err)
 				}
 			}
 
-			con->ssl = ssl_client_new(con->sslContext, clientfd, NULL, 0, con->ssl_ext);
+			con->ssl = ssl_client_new(con->sslContext, clientfd,
+									 	 (con->sslSessionId ? con->sslSessionId->value : NULL),
+										 (con->sslSessionId ? con->sslSessionId->length: 0),
+										 con->ssl_ext
+									 );
 			if(ssl_handshake_status(con->ssl)!=SSL_OK) {
 				debugf("SSL: handshake is in progress...");
 				return SSL_OK;
@@ -438,6 +442,14 @@ err_t TcpConnection::staticOnConnected(void *arg, tcp_pcb *tcp, err_t err)
 			debugf("SSL: Switching back 80 MHz");
 			System.setCpuFrequency(eCF_80MHz);
 #endif
+			if(con->sslSessionId) {
+				if(con->sslSessionId->value == NULL) {
+					con->sslSessionId->value = new uint8_t[SSL_SESSION_ID_SIZE];
+				}
+				memcpy((void *)con->sslSessionId->value, (void *)con->ssl->session_id, con->ssl->sess_id_size);
+				con->sslSessionId->length = con->ssl->sess_id_size;
+			}
+
 		}
 	}
 #endif
@@ -539,6 +551,14 @@ err_t TcpConnection::staticOnReceive(void *arg, tcp_pcb *tcp, pbuf *p, err_t err
 					closeTcpConnection(tcp);
 
 					return ERR_ABRT;
+				}
+
+				if(con->sslSessionId) {
+					if(con->sslSessionId->value == NULL) {
+						con->sslSessionId->value = new uint8_t[SSL_SESSION_ID_SIZE];
+					}
+					memcpy((void *)con->sslSessionId->value, (void *)con->ssl->session_id, con->ssl->sess_id_size);
+					con->sslSessionId->length = con->ssl->sess_id_size;
 				}
 
 				err_t res = con->onConnected(err);

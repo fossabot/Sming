@@ -54,6 +54,11 @@ typedef struct {
 	int certificateLength = 0;
 } SSLKeyCertPair;
 
+typedef struct {
+	uint8_t *value = NULL;
+	int length = 0;
+} SSLSessionId;
+
 #endif
 
 struct pbuf;
@@ -184,6 +189,7 @@ protected:
 	uint32_t sslOptions=0;
 	SSLKeyCertPair clientKeyCert;
 	bool freeClientKeyCert = false;
+	SSLSessionId* sslSessionId = NULL;
 #endif
 	bool useSsl = false;
 };

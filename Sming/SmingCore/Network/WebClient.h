@@ -20,7 +20,9 @@
 #include "../SmingCore/DataSourceStream.h"
 #include "../SmingCore/OutputStream.h"
 
-#include "../third-party/http-parser/http_parser.h"
+#define HTTP_MAX_HEADER_SIZE  (8*1024)
+
+#include "../http-parser/http_parser.h"
 
 typedef HashMap<String, String> WebClientParams;
 
@@ -225,10 +227,13 @@ protected:
 
 private:
 	static int staticOnMessageBegin(http_parser* parser);
+	static int staticOnStatus(http_parser *parser, const char *at, size_t length);
 	static int staticOnHeadersComplete(http_parser* parser);
 	static int staticOnHeaderField(http_parser *parser, const char *at, size_t length);
 	static int staticOnHeaderValue(http_parser *parser, const char *at, size_t length);
 	static int staticOnBody(http_parser *parser, const char *at, size_t length);
+	static int staticOnChunkHeader(http_parser* parser);
+	static int staticOnChunkComplete(http_parser* parser);
 	static int staticOnMessageComplete(http_parser* parser);
 
 protected:
@@ -270,7 +275,7 @@ public:
 				   );
 	}
 
-	__forceinline bool sendRequest(const HttpMethod method, const String& url, const Headers headers, const String& body, RequestCompletedDelegate requestComplete) {
+	__forceinline bool sendRequest(const HttpMethod method, const String& url, const Headers& headers, const String& body, RequestCompletedDelegate requestComplete) {
 			return send(request(url)
 					   ->setMethod(method)
 					   ->setHeaders(headers)

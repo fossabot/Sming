@@ -296,7 +296,7 @@ int HttpConnection::staticOnHeadersComplete(http_parser* parser)
 	 */
 
 	connection->code = parser->status_code;
-	if(!connection->currentRequest) {
+	if(connection->currentRequest == NULL) {
 		// nothing to process right now...
 		return 1;
 	}
@@ -311,6 +311,10 @@ int HttpConnection::staticOnHeadersComplete(http_parser* parser)
 	}
 
 	return error;
+}
+
+int HttpConnection::staticOnStatus(http_parser *parser, const char *at, size_t length) {
+	return 0;
 }
 
 int HttpConnection::staticOnHeaderField(http_parser *parser, const char *at, size_t length)
@@ -361,6 +365,11 @@ int HttpConnection::staticOnBody(http_parser *parser, const char *at, size_t len
 		return connection->currentRequest->requestBodyDelegate(*connection, at, length);
 	}
 
+	if (connection->mode == eWCM_String) {
+		connection->responseStringData += String(at, length);
+		return 0;
+	}
+
 	if(connection->currentRequest->outputStream != NULL) {
 		int res = connection->currentRequest->outputStream->write((const uint8_t *)&at, length);
 		if (res != length) {
@@ -369,6 +378,16 @@ int HttpConnection::staticOnBody(http_parser *parser, const char *at, size_t len
 		}
 	}
 
+	return 0;
+}
+
+int HttpConnection::staticOnChunkHeader(http_parser* parser) {
+	debugf("On chunk header");
+	return 0;
+}
+
+int HttpConnection::staticOnChunkComplete(http_parser* parser) {
+	debugf("On chunk complete");
 	return 0;
 }
 
@@ -385,7 +404,12 @@ err_t HttpConnection::onConnected(err_t err) {
 			parserSettings.on_headers_complete  = staticOnHeadersComplete;
 			parserSettings.on_message_complete  = staticOnMessageComplete;
 
+			parserSettings.on_chunk_header   = staticOnChunkHeader;
+			parserSettings.on_chunk_complete = staticOnChunkComplete;
+
+
 			// Data callbacks: on_url, (common) on_header_field, on_header_value, on_body;
+			parserSettings.on_status            = staticOnStatus;
 			parserSettings.on_header_field      = staticOnHeaderField;
 			parserSettings.on_header_value      = staticOnHeaderValue;
 			parserSettings.on_body              = staticOnBody;
@@ -568,6 +592,8 @@ bool WebClient::send(WebRequest* request) {
 	if(useSsl) {
 		if (!sslSessionIdPool.contains(cacheKey)) {
 			sslSessionIdPool[cacheKey] = (SSLSessionId *)malloc(sizeof(SSLSessionId));
+			sslSessionIdPool[cacheKey]->value = NULL;
+			sslSessionIdPool[cacheKey]->length = 0;
 		}
 
 		httpConnectionPool[cacheKey]->addSslOptions(request->getSslOptions());

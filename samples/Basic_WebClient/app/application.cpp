@@ -72,13 +72,13 @@ void displayCipher(SSL *ssl)
     m_printf("\n");
 }
 
-void onDownload(HttpConnection& client, bool success)
+void onDownload(HttpConnection& connection, bool success)
 {
-	debugf("Got response code: %d", client.getResponseCode());
-	debugf("Got content starting with: %s", client.getResponseString().substring(0, 50).c_str());
+	debugf("Got response code: %d", connection.getResponseCode());
+	debugf("Got content starting with: %s", connection.getResponseString().substring(0, 50).c_str());
 	debugf("Success: %d", success);
 
-	SSL* ssl = client.getSsl();
+	SSL* ssl = connection.getSsl();
 	if (ssl) {
 		const char *common_name = ssl_get_cert_dn(ssl,SSL_X509_CERT_COMMON_NAME);
 		if (common_name) {
@@ -91,12 +91,14 @@ void onDownload(HttpConnection& client, bool success)
 
 void connectOk()
 {
-	const uint8_t googleSha1Fingerprint[] = { 0x07, 0xf0, 0xb0, 0x8d, 0x41, 0xfb, 0xee, 0x6b, 0x34, 0xfb,
-			                                  0x9a, 0xd0, 0x9a, 0xa7, 0x73, 0xab, 0xcc, 0x8b, 0xb2, 0x64 };
+	const uint8_t googleSha1Fingerprint[] = {
+			0xc5, 0xf9, 0xf0, 0x66, 0xc9, 0x0a, 0x21, 0x4a, 0xbc, 0x37,
+			0xae, 0x6c, 0x48, 0xcc, 0x97, 0xa5, 0xc3, 0x35, 0x16, 0xdc
+	};
 
 	const uint8_t googlePublicKeyFingerprint[] = {
-			0xe7, 0x06, 0x09, 0xc7, 0xef, 0xb0, 0x69, 0xe8, 0x0a, 0xeb, 0x21, 0x16, 0x4c, 0xd4, 0x2d, 0x86,
-			0x65, 0x09, 0x62, 0x37, 0xeb, 0x75, 0x92, 0xaa, 0x10, 0x03, 0xe7, 0x99, 0x01, 0x9d, 0x9f, 0x0c
+			0x33, 0x47, 0xd1, 0x8a, 0xc8, 0x52, 0xd4, 0xd6, 0xd0, 0xa2, 0xcb, 0x3f, 0x4b, 0x54, 0x1f, 0x91,
+			0x64, 0x94, 0xa0, 0x9c, 0xa1, 0xe2, 0xf2, 0x4c, 0x68, 0xae, 0xc5, 0x27, 0x1c, 0x60, 0x83, 0xad
 	};
 
 	debugf("Connected. Got IP: %s", WifiStation.getIP().toString().c_str());
@@ -121,21 +123,29 @@ void connectOk()
 			->pinCertificate(googleSha1Fingerprint, eSFT_CertSha1)
 			->onRequestComplete(onDownload)
 	);
-	downloadClient.downloadString("https://www.google.com/services/", onDownload);
-	downloadClient.downloadString("https://www.google.com/intl/en/policies/privacy/", onDownload);
+
+	Headers requestHeaders;
+	requestHeaders["User-Agent"] = "WebClient/Sming";
+
+	downloadClient.sendRequest(HTTP_HEAD, "https://www.google.com/services/", requestHeaders, onDownload);
+//	downloadClient.sendRequest(HTTP_HEAD, "https://www.google.com/intl/en/policies/privacy/", requestHeaders, onDownload);
+//	downloadClient.sendRequest(HTTP_HEAD, "https://www.google.com/business/", requestHeaders, onDownload);
 
 	// The code above should make ONE tcp connection, ONE SSL handshake and then all requests should be pipelined to the
 	// remote server taking care to speed the fetching of a page as fast as possible.
 
 	// If we create a second web client instance it will create a new TCP connection and will try to reuse the SSL session id
 	// from previous connections
+	/*
 	WebClient secondClient;
 	secondClient.send(
 			secondClient.request("https://www.google.com/")
 			->setMethod(HTTP_POST)
 			->setBody("q=sming+framework")
+			->setSslOptions(SSL_SERVER_VERIFY_LATER)
 			->onRequestComplete(onDownload)
 	);
+	*/
 }
 
 void connectFail()

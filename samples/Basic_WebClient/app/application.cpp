@@ -75,9 +75,10 @@ void displayCipher(SSL *ssl)
 void onDownload(HttpConnection& connection, bool success)
 {
 	debugf("Got response code: %d", connection.getResponseCode());
-	debugf("Got content starting with: %s", connection.getResponseString().substring(0, 50).c_str());
 	debugf("Success: %d", success);
-
+	if(connection.getRequest()->method != HTTP_HEAD) {
+		debugf("Got content starting with: %s", connection.getResponseString().substring(0, 50).c_str());
+	}
 	SSL* ssl = connection.getSsl();
 	if (ssl) {
 		const char *common_name = ssl_get_cert_dn(ssl,SSL_X509_CERT_COMMON_NAME);
@@ -89,7 +90,7 @@ void onDownload(HttpConnection& connection, bool success)
 	}
 }
 
-void connectOk()
+void connectOk(IPAddress ip, IPAddress mask, IPAddress gateway)
 {
 	const uint8_t googleSha1Fingerprint[] = {
 			0xc5, 0xf9, 0xf0, 0x66, 0xc9, 0x0a, 0x21, 0x4a, 0xbc, 0x37,
@@ -101,57 +102,68 @@ void connectOk()
 			0x64, 0x94, 0xa0, 0x9c, 0xa1, 0xe2, 0xf2, 0x4c, 0x68, 0xae, 0xc5, 0x27, 0x1c, 0x60, 0x83, 0xad
 	};
 
-	debugf("Connected. Got IP: %s", WifiStation.getIP().toString().c_str());
+	debugf("Connected. Got IP: %s", ip.toString().c_str());
 
 	/*
 	 * Notice: If we use SSL we need to set the SSL settings only for the first request
 	 * 		   and all consecutive requests to the same host:port will try to reuse those settings
 	 */
 
+	Headers requestHeaders;
+	requestHeaders["User-Agent"] = "WebClient/Sming";
+
 	downloadClient.send(
-			downloadClient.request("https://www.google.com/")
+			downloadClient.request("https://www.attachix.com/assets/css/local.css")
+			->setHeaders(requestHeaders)
 			->setSslOptions(SSL_SERVER_VERIFY_LATER)
 			/*
 			 * The line below shows how to trust only a certificate in which the public key matches the SHA256 fingerprint.
 			 * When google changes the private key that they use in their certificate the SHA256 fingerprint should not match any longer.
 			 */
-			->pinCertificate(googlePublicKeyFingerprint, eSFT_PkSha256)
+//			->pinCertificate(googlePublicKeyFingerprint, eSFT_PkSha256)
 			/*
 			 * The line below shows how to trust only a certificate that matches the SHA1 fingerprint.
 			 * When google changes their certificate the SHA1 fingerprint should not match any longer.
 			 */
-			->pinCertificate(googleSha1Fingerprint, eSFT_CertSha1)
+//			->pinCertificate(googleSha1Fingerprint, eSFT_CertSha1)
 			->onRequestComplete(onDownload)
 	);
 
-	Headers requestHeaders;
-	requestHeaders["User-Agent"] = "WebClient/Sming";
 
-	downloadClient.sendRequest(HTTP_HEAD, "https://www.google.com/services/", requestHeaders, onDownload);
-//	downloadClient.sendRequest(HTTP_HEAD, "https://www.google.com/intl/en/policies/privacy/", requestHeaders, onDownload);
-//	downloadClient.sendRequest(HTTP_HEAD, "https://www.google.com/business/", requestHeaders, onDownload);
+	downloadClient.send(
+			downloadClient.request("https://www.attachix.com/services/")
+			->setMethod(HTTP_HEAD)
+			->setHeaders(requestHeaders)
+			->onRequestComplete(onDownload)
+	);
+
+
+	downloadClient.send(
+			downloadClient.request("https://www.attachix.com/business/")
+			->setMethod(HTTP_HEAD)
+			->onRequestComplete(onDownload)
+	);
+
+	downloadClient.sendRequest(HTTP_HEAD, "https://www.attachix.com/intl/en/policies/privacy/", requestHeaders, onDownload);
 
 	// The code above should make ONE tcp connection, ONE SSL handshake and then all requests should be pipelined to the
 	// remote server taking care to speed the fetching of a page as fast as possible.
 
+#if 1
 	// If we create a second web client instance it will create a new TCP connection and will try to reuse the SSL session id
 	// from previous connections
-	/*
 	WebClient secondClient;
 	secondClient.send(
-			secondClient.request("https://www.google.com/")
-			->setMethod(HTTP_POST)
-			->setBody("q=sming+framework")
+			secondClient.request("https://www.attachix.com/")
+			->setMethod(HTTP_HEAD)
 			->setSslOptions(SSL_SERVER_VERIFY_LATER)
 			->onRequestComplete(onDownload)
 	);
-	*/
+#endif
 }
 
-void connectFail()
-{
-	debugf("I'm NOT CONNECTED!");
-	WifiStation.waitConnection(connectOk, 10, connectFail); // Repeat and check again
+void connectFail(String ssid, uint8_t ssidLength, uint8_t *bssid, uint8_t reason) {
+	debugf("Disconnected from %s. Reason: %d", ssid.c_str(), reason);
 }
 
 void init()
@@ -164,6 +176,6 @@ void init()
 	WifiStation.enable(true);
 	WifiStation.config(WIFI_SSID, WIFI_PWD); // Put you SSID and Password here
 
-	// Run our method when station was connected to AP (or not connected)
-	WifiStation.waitConnection(connectOk, 30, connectFail); // We recommend 20+ seconds at start
+	WifiEvents.onStationGotIP(connectOk);
+	WifiEvents.onStationDisconnect(connectFail);
 }

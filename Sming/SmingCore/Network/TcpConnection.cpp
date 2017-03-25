@@ -428,6 +428,16 @@ err_t TcpConnection::staticOnConnected(void *arg, tcp_pcb *tcp, err_t err)
 				}
 			}
 
+			debugf("SSL: Session Id Length: %d", (con->sslSessionId != NULL ? con->sslSessionId->length: 0));
+			if(con->sslSessionId != NULL &&  con->sslSessionId->length > 0) {
+				debugf("-----BEGIN SSL SESSION PARAMETERS-----");
+				for (int i = 0; i <  con->sslSessionId->length; i++) {
+					m_printf("%02x", con->sslSessionId->value[i]);
+				}
+
+				debugf("\n-----END SSL SESSION PARAMETERS-----");
+			}
+
 			con->ssl = ssl_client_new(con->sslContext, clientfd,
 									 	 (con->sslSessionId != NULL ? con->sslSessionId->value : NULL),
 										 (con->sslSessionId != NULL ? con->sslSessionId->length: 0),

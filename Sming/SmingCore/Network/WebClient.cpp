@@ -252,7 +252,6 @@ int HttpConnection::staticOnMessageComplete(http_parser* parser)
 
 	// we are finished with this request
 	if(connection->currentRequest->requestCompletedDelegate) {
-		debugf("FINAL: %s", connection->currentRequest->uri.toString().c_str());
 		connection->currentRequest->requestCompletedDelegate(*connection, connection->code);
 	}
 
@@ -263,6 +262,7 @@ int HttpConnection::staticOnMessageComplete(http_parser* parser)
 	delete connection->currentRequest;
 	connection->currentRequest = NULL;
 
+	debugf("staticOnMessageComplete: Execution queue: %d", connection->executionQueue.count());
 	if(!connection->executionQueue.count()) {
 		connection->onConnected(ERR_OK);
 	}
@@ -415,7 +415,7 @@ err_t HttpConnection::onConnected(err_t err) {
 			parserSettings.on_body              = staticOnBody;
 		}
 
-		do {
+		for(int i=0; i< waitingQueue->count(); i++) {
 			WebRequest* request = waitingQueue->peek();
 			if(request == NULL) {
 				break;
@@ -439,7 +439,7 @@ err_t HttpConnection::onConnected(err_t err) {
 				// if the next request cannot be pipelined -> break for now
 				break;
 			}
-		} while(true);
+		}
 	}
 
 	TcpClient::onConnected(err);

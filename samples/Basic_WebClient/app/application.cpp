@@ -19,7 +19,7 @@
 #endif
 
 Timer procTimer;
-WebClient downloadClient;
+HttpClient downloadClient;
 
 /* Debug SSL functions */
 void displaySessionId(SSL *ssl)
@@ -152,7 +152,7 @@ void connectOk(IPAddress ip, IPAddress mask, IPAddress gateway)
 #if 1
 	// If we create a second web client instance it will create a new TCP connection and will try to reuse the SSL session id
 	// from previous connections
-	WebClient secondClient;
+	HttpClient secondClient;
 	secondClient.send(
 			secondClient.request("https://www.attachix.com/")
 			->setMethod(HTTP_HEAD)

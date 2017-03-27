@@ -40,7 +40,6 @@ enum SslFingerprintType {
 					//    Only when the private key used to generate the certificate is used then that fingerprint
 };
 
-
 typedef struct {
 	uint8_t* certSha1 = NULL; // << certificate SHA1 fingerprint
 	uint8_t* pkSha256 = NULL; // << public key SHA256 fingerprint
@@ -130,7 +129,21 @@ public:
 	bool pinCertificate(const uint8_t *fingerprint, SslFingerprintType type);
 
 	/**
+	 * @brief   Requires(pins) the remote SSL certificate to match certain fingerprints
+	 *
+	 * @note  The data inside the fingerprints parameter is passed by reference
+	 *
+	 * @param SSLFingerprints - passes the certificate fingerprints by reference.
+	 *
+	 * @return bool  true of success, false or failure
+	 */
+	bool pinCertificate(SSLFingerprints fingerprints);
+
+	/**
 	 * @brief Sets client private key, certificate and password from memory
+	 *
+	 * @note  This method makes copy of the data.
+	 *
 	 * @param const uint8_t *keyData
 	 * @param int keyLength
 	 * @param const uint8_t *certificateData
@@ -143,6 +156,18 @@ public:
 	bool setSslClientKeyCert(const uint8_t *key, int keyLength,
 							 const uint8_t *certificate, int certificateLength,
 							 const char *keyPassword = NULL, bool freeAfterHandshake = false);
+
+	/**
+	* @brief Sets client private key, certificate and password from memory
+	*
+	* @note  This method passes the certificate key chain by reference
+	*
+	* @param SSLKeyCertPair
+	* @param bool freeAfterHandshake
+	*
+	* @return bool  true of success, false or failure
+	*/
+	bool setSslClientKeyCert(SSLKeyCertPair clientKeyCert, bool freeAfterHandshake = false);
 
 	/**
 	 * @brief Frees the memory used for the client key and certificate pair

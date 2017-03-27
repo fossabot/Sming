@@ -727,6 +727,11 @@ bool TcpConnection::pinCertificate(const uint8_t *fingerprint, SslFingerprintTyp
 	return true;
 }
 
+bool TcpConnection::pinCertificate(SSLFingerprints fingerprints) {
+	sslFingerprint = fingerprints;
+	return true;
+}
+
 bool TcpConnection::setSslClientKeyCert(const uint8_t *key, int keyLength,
 							 const uint8_t *certificate, int certificateLength,
 							 const char *keyPassword /* = NULL */, bool freeAfterHandshake /* = false */) {
@@ -753,6 +758,13 @@ bool TcpConnection::setSslClientKeyCert(const uint8_t *key, int keyLength,
 	clientKeyCert.keyLength = keyLength;
 	clientKeyCert.certificateLength = certificateLength;
 	clientKeyCert.keyLength = keyLength;
+
+	return true;
+}
+
+bool TcpConnection::setSslClientKeyCert(SSLKeyCertPair clientKeyCert, bool freeAfterHandshake /* = false */) {
+	this->clientKeyCert = clientKeyCert;
+	freeClientKeyCert = freeAfterHandshake;
 
 	return true;
 }

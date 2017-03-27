@@ -15,6 +15,40 @@ WebRequest::WebRequest(URL uri) {
 	this->uri = uri;
 }
 
+WebRequest::WebRequest(const WebRequest& value) {
+	*this = value;
+	method = value.method;
+	uri = value.uri;
+	if(value.requestHeaders.count()) {
+		setHeaders(value.requestHeaders);
+	}
+	headersCompletedDelegate = value.headersCompletedDelegate;
+	requestBodyDelegate = value.requestBodyDelegate;
+	requestCompletedDelegate = value.requestCompletedDelegate;
+
+	bodyAsString = value.bodyAsString;
+	rawData = value.rawData;
+	rawDataLength = value.rawDataLength;
+
+	// Notice: We do not copy streams.
+
+#ifdef ENABLE_SSL
+	sslOptions = value.sslOptions;
+	sslFingerprint = value.sslFingerprint;
+	sslClientKeyCert = value.sslClientKeyCert;
+#endif
+}
+
+WebRequest& WebRequest::operator = (const WebRequest& rhs) {
+	if (this == &rhs) return *this;
+
+	// TODO: FIX this...
+//	if (rhs.buffer) copy(rhs.buffer, rhs.len);
+//	else invalidate();
+
+	return *this;
+}
+
 WebRequest* WebRequest::setURL(URL uri) {
 	this->uri = uri;
 	return this;
@@ -47,50 +81,16 @@ uint32_t WebRequest::getSslOptions() {
  	return sslOptions;
 }
 
-WebRequest* WebRequest::pinCertificate(const uint8_t *fingerprint, SslFingerprintType type) {
-	int length = 0;
-	uint8_t *localStore;
-
-	switch(type) {
-	case eSFT_CertSha1:
-		localStore = sslFingerprint.certSha1;
-		length = SHA1_SIZE;
-		break;
-	case eSFT_PkSha256:
-		localStore = sslFingerprint.pkSha256;
-		length = SHA256_SIZE;
-		break;
-	default:
-		debugf("Unsupported SSL certificate fingerprint type");
-	}
-
-	if(!length) {
-		debugf("Cannot set certificate pinning. Wrong type");
-		return this;
-	}
-
-	if(localStore) {
-		delete[] localStore;
-	}
-	localStore = new uint8_t[length];
-	if(localStore == NULL) {
-		debugf("Cannot set certificate pinning. Not enought memory");
-		return this;
-	}
-
-	memcpy(localStore, fingerprint, length);
-
-	switch(type) {
-		case eSFT_CertSha1:
-			sslFingerprint.certSha1 = localStore;
-			break;
-		case eSFT_PkSha256:
-			sslFingerprint.pkSha256 = localStore;
-			break;
-	}
-
+WebRequest* WebRequest::pinCertificate(SSLFingerprints fingerprints) {
+	sslFingerprint = fingerprints;
 	return this;
 }
+
+WebRequest* WebRequest::setSslClientKeyCert(SSLKeyCertPair clientKeyCert) {
+	this->sslClientKeyCert = clientKeyCert;
+	return this;
+}
+
 #endif
 
 WebRequest* WebRequest::setBody(const String& body) {
@@ -124,8 +124,34 @@ WebRequest* WebRequest::onRequestComplete(RequestCompletedDelegate delegateFunct
 	return this;
 }
 
+#ifndef SMING_RELEASE
+String WebRequest::toString() {
+	String content = "";
+#ifdef ENABLE_SSL
+	content += "> SSL options: " + String(sslOptions) + "\n";
+	content += "> SSL Cert Fingerprint Length: " + String((sslFingerprint.certSha1 == NULL)? 0: SHA1_SIZE) + "\n";
+	content += "> SSL PK Fingerprint Length: " + String((sslFingerprint.pkSha256 == NULL)? 0: SHA256_SIZE) + "\n";
+	content += "> SSL ClientCert Length: " + String(sslClientKeyCert.certificateLength) + "\n";
+	content += "> SSL ClientCert PK Length: " + String(sslClientKeyCert.keyLength) + "\n";
+	content += "\n";
+#endif
+
+	content += http_method_str(method) + String(" ") + uri.getPathWithQuery() + " HTTP/1.1\n";
+	content += "Host: " + uri.Host + ":" + uri.Port + "\n";
+	for(int i=0; i< requestHeaders.count(); i++) {
+		content += requestHeaders.keyAt(i) + ": " + requestHeaders.valueAt(i) + "\n";
+	}
+
+	if(rawDataLength) {
+		content += "Content-Length: " + String(rawDataLength);
+	}
+
+	return content;
+}
+#endif
+
 // HttpConnection
-HttpConnection::HttpConnection(RequestQueue* queue): TcpClient(false), mode(eWCM_String) {
+HttpConnection::HttpConnection(RequestQueue* queue): TcpClient(false), mode(eHCM_String) {
 	this->waitingQueue = queue;
 }
 
@@ -142,7 +168,6 @@ bool HttpConnection::connect(const String& host, int port, bool useSsl /* = fals
 
 	return TcpClient::connect(host, port, useSsl, sslOptions);
 }
-
 
 // @deprecated
 HashMap<String, String> &HttpConnection::getResponseHeaders()
@@ -180,7 +205,7 @@ DateTime HttpConnection::getServerDate()
 
 String HttpConnection::getResponseString()
 {
-	if (mode == eWCM_String)
+	if (mode == eHCM_String)
 		return responseStringData;
 	else
 		return "";
@@ -229,10 +254,10 @@ int HttpConnection::staticOnMessageBegin(http_parser* parser)
 	}
 
 	if(connection->currentRequest->outputStream != NULL) {
-		connection->mode = eWCM_Stream;
+		connection->mode = eHCM_Stream;
 	}
 	else {
-		connection->mode = eWCM_String;
+		connection->mode = eHCM_String;
 	}
 
 	return 0;
@@ -251,11 +276,15 @@ int HttpConnection::staticOnMessageComplete(http_parser* parser)
 	}
 
 	// we are finished with this request
+	int hasError = 0;
 	if(connection->currentRequest->requestCompletedDelegate) {
-		connection->currentRequest->requestCompletedDelegate(*connection, connection->code);
+		bool success = (HTTP_PARSER_ERRNO(parser) == HPE_OK) &&  // false when the parsing has failed
+					   (connection->code >= 200 && connection->code <= 399);  // false when the HTTP status code is not ok
+		hasError = connection->currentRequest->requestCompletedDelegate(*connection, success);
 	}
 
 	if(connection->currentRequest->outputStream != NULL) {
+		connection->currentRequest->outputStream->close();
 		delete connection->currentRequest->outputStream;
 	}
 
@@ -267,7 +296,7 @@ int HttpConnection::staticOnMessageComplete(http_parser* parser)
 		connection->onConnected(ERR_OK);
 	}
 
-	return 0;
+	return hasError;
 }
 
 int HttpConnection::staticOnHeadersComplete(http_parser* parser)
@@ -365,7 +394,7 @@ int HttpConnection::staticOnBody(http_parser *parser, const char *at, size_t len
 		return connection->currentRequest->requestBodyDelegate(*connection, at, length);
 	}
 
-	if (connection->mode == eWCM_String) {
+	if (connection->mode == eHCM_String) {
 		connection->responseStringData += String(at, length);
 		return 0;
 	}
@@ -568,7 +597,7 @@ HttpConnection::~HttpConnection() {
 // WebClient
 
 /* Low Level Methods */
-bool WebClient::send(WebRequest* request) {
+bool HttpClient::send(WebRequest* request) {
 	String cacheKey = getCacheKey(request->uri);
 	bool useSsl = (request->uri.Protocol == HTTPS_URL_PROTOCOL);
 
@@ -578,7 +607,6 @@ bool WebClient::send(WebRequest* request) {
 
 	if(!queue[cacheKey]->enqueue(request)) {
 		// the queue is full and we cannot add more requests at the time.
-		// the current max of the queue is
 		debugf("The request queue is full at the moment");
 		return false;
 	}
@@ -595,14 +623,9 @@ bool WebClient::send(WebRequest* request) {
 			sslSessionIdPool[cacheKey]->value = NULL;
 			sslSessionIdPool[cacheKey]->length = 0;
 		}
-
 		httpConnectionPool[cacheKey]->addSslOptions(request->getSslOptions());
-		if(request->sslFingerprint.certSha1 != NULL) {
-			httpConnectionPool[cacheKey]->pinCertificate(request->sslFingerprint.certSha1, eSFT_CertSha1);
-		}
-		if(request->sslFingerprint.pkSha256 != NULL) {
-			httpConnectionPool[cacheKey]->pinCertificate(request->sslFingerprint.pkSha256, eSFT_PkSha256);
-		}
+		httpConnectionPool[cacheKey]->pinCertificate(request->sslFingerprint);
+		httpConnectionPool[cacheKey]->setSslClientKeyCert(request->sslClientKeyCert);
 		httpConnectionPool[cacheKey]->sslSessionId = sslSessionIdPool[cacheKey];
 	}
 #endif
@@ -612,14 +635,14 @@ bool WebClient::send(WebRequest* request) {
 
 // @deprecated
 
-bool WebClient::downloadString(const String& url, RequestCompletedDelegate requestComplete) {
+bool HttpClient::downloadString(const String& url, RequestCompletedDelegate requestComplete) {
 	return send(request(url)
 				->setMethod(HTTP_GET)
 				->onRequestComplete(requestComplete)
 				);
 }
 
-bool WebClient::downloadFile(String url, String saveFileName, RequestCompletedDelegate requestComplete /* = NULL */)
+bool HttpClient::downloadFile(String url, String saveFileName, RequestCompletedDelegate requestComplete /* = NULL */)
 {
 	URL uri = URL(url);
 
@@ -667,14 +690,14 @@ bool HttpConnection::send(IDataSourceStream* inputStream, bool forceCloseAfterSe
 }
 
 
-WebRequest* WebClient::request(const String& url) {
+WebRequest* HttpClient::request(const String& url) {
 	return new WebRequest(URL(url));
 }
 
 #ifdef ENABLE_SSL
-HashMap<String, SSLSessionId* > WebClient::sslSessionIdPool;
+HashMap<String, SSLSessionId* > HttpClient::sslSessionIdPool;
 
-void WebClient::freeSslSessionPool() {
+void HttpClient::freeSslSessionPool() {
 	for(int i=0; i< sslSessionIdPool.count(); i ++) {
 		String key = sslSessionIdPool.keyAt(i);
 		if(sslSessionIdPool[key]->value != NULL) {
@@ -686,11 +709,11 @@ void WebClient::freeSslSessionPool() {
 }
 #endif
 
-WebClient::~WebClient() {
+HttpClient::~HttpClient() {
 	queue.clear();
 	httpConnectionPool.clear();
 }
 
-String WebClient::getCacheKey(URL url) {
+String HttpClient::getCacheKey(URL url) {
 	return String(url.Host) + ":" + String(url.Port);
 }

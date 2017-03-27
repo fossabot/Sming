@@ -36,7 +36,7 @@
 #include "Platform/WDT.h"
 
 #include "Network/DNSServer.h"
-#include "Network/HttpClient.h"
+#include "Network/WebClient.h"
 #include "Network/MqttClient.h"
 #include "Network/NtpClient.h"
 #include "Network/HttpServer.h"

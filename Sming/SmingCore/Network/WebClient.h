@@ -38,12 +38,12 @@ class SimpleQueue: public FIFO<T, rawSize> {
 };
 
 
-enum WebClientMode
+enum HttpClientMode
 {
-	eWCM_String = 0,
-	eWCM_File, // << Deprecated! Use eWCM_Stream stream instead
-	eWCM_Stream,
-	eWCM_UserDefined
+	eHCM_String = 0,
+	eHCM_File, // << Deprecated! Use eHCM_Stream stream instead
+	eHCM_Stream,
+	eHCM_UserDefined // << Deprecated! If you supply onBody callback then the incoming body will be processed from the callback directly
 };
 
 /**
@@ -63,7 +63,7 @@ enum WebClientMode
  * 3 ) SSL session id re-usage: A session id should be valid for 30 minutes or even an hour. (Most CPU intensive -> no-need for additional handshake)
  *
  *
- * webClient=new WebClient();
+ * HttpClient webClient=new HttpClient();
  *
  * High-Level
  * webClient->sendRequest(url, onRequestComplete) ...
@@ -97,10 +97,10 @@ typedef HashMap<String, String> Headers;
 
 typedef Delegate<int(HttpConnection& client, Headers& headers)> RequestHeadersCompletedDelegate;
 typedef Delegate<int(HttpConnection& client, const char *at, size_t length)> RequestBodyDelegate;
-typedef Delegate<void(HttpConnection& client, bool successful)> RequestCompletedDelegate;
+typedef Delegate<int(HttpConnection& client, bool successful)> RequestCompletedDelegate;
 
 class WebResponse {
-	friend class WebClient;
+	friend class HttpClient;
 	friend class HttpConnection;
 
 public:
@@ -111,12 +111,16 @@ public:
 };
 
 class WebRequest {
-	friend class WebClient;
+	friend class HttpClient;
 	friend class HttpConnection;
 
 public:
 
 	WebRequest(URL uri);
+	WebRequest(const WebRequest& value);
+	__forceinline WebRequest* clone() const { return new WebRequest(*this); }
+	WebRequest& operator = (const WebRequest& rhs);
+
 
 	WebRequest* setURL(URL uri);
 
@@ -130,7 +134,24 @@ public:
 #ifdef ENABLE_SSL
  	WebRequest* setSslOptions(uint32_t sslOptions);
  	uint32_t getSslOptions();
- 	WebRequest* pinCertificate(const uint8_t *fingerprint, SslFingerprintType type);
+
+ 	/**
+	 * @brief   Requires(pins) the remote SSL certificate to match certain fingerprints
+	 * 			Check if SHA256 hash of Subject Public Key Info matches the one given.
+	 * @param SSLFingerprints - passes the certificate fingerprints by reference.
+	 *
+	 * @return bool  true of success, false or failure
+	 */
+ 	WebRequest* pinCertificate(SSLFingerprints fingerprints);
+
+ 	/**
+	 * @brief Sets client private key, certificate and password from memory
+	 * @param SSLKeyCertPair
+	 * @param bool freeAfterHandshake
+	 *
+	 * @return WebRequest pointer
+	 */
+ 	WebRequest* setSslClientKeyCert(SSLKeyCertPair clientKeyCert);
 #endif
 
 	WebRequest* setBody(const String& body);
@@ -143,6 +164,13 @@ public:
 	WebRequest* onBody(RequestBodyDelegate delegateFunction);
 	WebRequest* onRequestComplete(RequestCompletedDelegate delegateFunction);
 
+#ifndef SMING_RELEASE
+	/**
+	 * @brief Tries to present a readable version of the current request values
+	 * @return String
+	 */
+	String toString();
+#endif
 
 public:
 	URL uri;
@@ -163,6 +191,7 @@ protected:
 #ifdef ENABLE_SSL
 	uint32_t sslOptions = 0;
 	SSLFingerprints sslFingerprint;
+	SSLKeyCertPair sslClientKeyCert;
 #endif
 };
 
@@ -171,7 +200,7 @@ typedef SimpleQueue<WebRequest*, REQUEST_POOL_SIZE> RequestQueue;
 
 
 class HttpConnection : protected TcpClient {
-	friend class WebClient;
+	friend class HttpClient;
 
 public:
 	HttpConnection(RequestQueue* queue);
@@ -237,7 +266,7 @@ private:
 	static int IRAM_ATTR staticOnMessageComplete(http_parser* parser);
 
 protected:
-	WebClientMode mode;
+	HttpClientMode mode;
 	String responseStringData;
 
 	RequestQueue* waitingQueue;
@@ -253,7 +282,7 @@ protected:
 	WebRequest* currentRequest = NULL;
 };
 
-class WebClient
+class HttpClient
 {
 
 public:
@@ -296,7 +325,7 @@ public:
 	static void freeSslSessionPool();
 #endif
 
-	virtual ~WebClient();
+	virtual ~HttpClient();
 
 protected:
 	String getCacheKey(URL url);
@@ -316,7 +345,7 @@ protected:
 
 @code
 
-WebClient client = new WebClient();
+HttpClient client = new HttpClient();
 Headers requestHeaders;
 
 client->sendRequest("https://attachix.com/img/a.gif", onRequestComplete);
@@ -329,7 +358,7 @@ client->sendRequest("https://attachix.com/js/e.js", onRequestComplete);
 // if onConnected is called -> if 1,2..N are get requests to the same server, then
 
 
-client->sendRequest(HTTP_GET, "https://attachix.com/update/check", requestHeaders, NULL, [](WebClient& client, bool successful) -> void {
+client->sendRequest(HTTP_GET, "https://attachix.com/update/check", requestHeaders, NULL, [](HttpClient& client, bool successful) -> void {
 	if(!successful) {
 		// TODO:
 		return;

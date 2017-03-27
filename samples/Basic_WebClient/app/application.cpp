@@ -12,6 +12,15 @@
 
 #include "Network/WebClient.h"
 
+
+#define MCDBGQ_TRACKMEM 0
+#define MCDBGQ_NOLOCKFREE_FREELIST 0
+#define MCDBGQ_USEDEBUGFREELIST 0
+#define MCDBGQ_NOLOCKFREE_IMPLICITPRODBLOCKINDEX 0
+#define MCDBGQ_NOLOCKFREE_IMPLICITPRODHASH 0
+
+#include "concurrentqueue.h"
+
 // If you want, you can define WiFi settings globally in Eclipse Environment Variables
 #ifndef WIFI_SSID
 	#define WIFI_SSID "PleaseEnterSSID" // Put you SSID and Password here
@@ -178,4 +187,10 @@ void init()
 
 	WifiEvents.onStationGotIP(connectOk);
 	WifiEvents.onStationDisconnect(connectFail);
+
+
+	WebRequest* request = new WebRequest(URL("http://attachix.com"));
+
+	moodycamel::ConcurrentQueue<WebRequest*, moodycamel::ConcurrentQueueDefaultTraits> queue(10);
+	queue.enqueue(request);
 }

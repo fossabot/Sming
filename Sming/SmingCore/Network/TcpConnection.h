@@ -126,7 +126,7 @@ public:
 	 * 			Disadvantages: The hash needs to be updated every time the remote server updates its certificate
 	 * @return bool  true of success, false or failure
 	 */
-	bool pinCertificate(const uint8_t *fingerprint, SslFingerprintType type);
+	bool pinCertificate(const uint8_t *fingerprint, SslFingerprintType type, bool freeAfterHandshake = false);
 
 	/**
 	 * @brief   Requires(pins) the remote SSL certificate to match certain fingerprints
@@ -137,7 +137,7 @@ public:
 	 *
 	 * @return bool  true of success, false or failure
 	 */
-	bool pinCertificate(SSLFingerprints fingerprints);
+	bool pinCertificate(SSLFingerprints fingerprints, bool freeAfterHandshake = false);
 
 	/**
 	 * @brief Sets client private key, certificate and password from memory
@@ -173,6 +173,11 @@ public:
 	 * @brief Frees the memory used for the client key and certificate pair
 	 */
 	void freeSslClientKeyCert();
+
+	/**
+	 * @brief Frees the memory used for SSL fingerprinting
+	 */
+	void freeSslFingerprints();
 
 	SSL* getSsl();
 #endif
@@ -214,6 +219,7 @@ protected:
 	uint32_t sslOptions=0;
 	SSLKeyCertPair clientKeyCert;
 	bool freeClientKeyCert = false;
+	bool freeFingerprints = false;
 	SSLSessionId* sslSessionId = NULL;
 #endif
 	bool useSsl = false;

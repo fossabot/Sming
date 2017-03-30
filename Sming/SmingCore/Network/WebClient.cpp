@@ -473,46 +473,33 @@ err_t HttpConnection::onConnected(err_t err) {
 		debugf("HttpConnection::onConnected: waitingQueue.count: %d", waitingQueue->count());
 
 		for(int i=0; i< waitingQueue->count(); i++) {
-			debugf("HttpConnection::onConnected 1 > ");
 			WebRequest* request = waitingQueue->peek(); // TODO: make sure that peek returns NULL if there are no elements
 			if(request == NULL) {
 				break;
 			}
-
-			debugf("HttpConnection::onConnected 2 > ");
 
 			if(!executionQueue.enqueue(request)) {
 				debugf("The working queue is full at the moment");
 				break;
 			}
 
-			debugf("HttpConnection::onConnected 3 > ");
-
 			waitingQueue->dequeue(); // Make sure that dequeue returns null if there are no elements
 			send(request);
-
-			debugf("HttpConnection::onConnected 4 > ");
 
 			if(!(request->method == HTTP_GET || request->method == HTTP_HEAD)) {
 				// if the current request cannot be pipelined -> break;
 				break;
 			}
 
-			debugf("HttpConnection::onConnected 5 > ");
-
 			if(!waitingQueue->count()) {
 				break;
 			}
-
-			debugf("HttpConnection::onConnected 6 > ");
 
 			WebRequest* nextRequest = waitingQueue->peek(); // Make sure that dequeue returns null if there are no elements
 			if(nextRequest != NULL && !(nextRequest->method == HTTP_GET || nextRequest->method == HTTP_HEAD))  {
 				// if the next request cannot be pipelined -> break for now
 				break;
 			}
-
-			debugf("HttpConnection::onConnected 7 > ");
 		}
 	}
 

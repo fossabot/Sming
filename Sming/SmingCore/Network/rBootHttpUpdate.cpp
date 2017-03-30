@@ -36,8 +36,6 @@ void rBootHttpUpdate::start() {
 		rBootHttpUpdateItem &it = items[i];
 		debugf("Download file:\r\n    (%d) %s -> %X", currentItem, it.url.c_str(), it.targetOffset);
 
-		debugf("rBootHttpUpdate::start 1: FH: %d", system_get_free_heap_size());
-
 		WebRequest *request;
 		if(baseRequest != NULL) {
 			request = baseRequest->clone();
@@ -52,8 +50,6 @@ void rBootHttpUpdate::start() {
 		rBootItemOutputStream *responseStream = new rBootItemOutputStream(&it);
 		request->setResponseStream(responseStream);
 
-		debugf("rBootHttpUpdate::start 1.7: FH: %d", system_get_free_heap_size());
-
 		if(i == items.count() - 1) {
 			request->onRequestComplete(RequestCompletedDelegate(&rBootHttpUpdate::updateComplete, this));
 		}
@@ -61,14 +57,10 @@ void rBootHttpUpdate::start() {
 			request->onRequestComplete(RequestCompletedDelegate(&rBootHttpUpdate::itemComplete, this));
 		}
 
-		debugf("rBootHttpUpdate::start 2: FH: %d", system_get_free_heap_size());
-
 		if(!send(request)) {
 			debugf("ERROR: Rejected sending new request.");
 			break;
 		}
-
-		debugf("rBootHttpUpdate::start 3: FH: %d", system_get_free_heap_size());
 	}
 }
 

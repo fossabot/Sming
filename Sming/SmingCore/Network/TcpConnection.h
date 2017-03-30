@@ -96,7 +96,9 @@ public:
 	/**
 	 * @brief Sets the SHA1 certificate finger print.
 	 * 		  The latter will be used after successful handshake to check against the fingerprint of the other side.
+	 *
 	 * @deprecated This method will be removed in future releases. Use pinCertificate instead.
+	 *
 	 * @param const uint8_t *data
 	 * @param int length
 	 * @return bool  true of success, false or failure

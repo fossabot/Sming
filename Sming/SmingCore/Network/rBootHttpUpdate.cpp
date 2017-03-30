@@ -36,6 +36,8 @@ void rBootHttpUpdate::start() {
 		rBootHttpUpdateItem &it = items[i];
 		debugf("Download file:\r\n    (%d) %s -> %X", currentItem, it.url.c_str(), it.targetOffset);
 
+		debugf("rBootHttpUpdate::start 1: FH: %d", system_get_free_heap_size());
+
 		WebRequest *request;
 		if(baseRequest != NULL) {
 			request = baseRequest->clone();
@@ -47,8 +49,10 @@ void rBootHttpUpdate::start() {
 
 		request->setMethod(HTTP_GET);
 
-		rBootItemOutputStream *responseStream = new rBootItemOutputStream(it);
+		rBootItemOutputStream *responseStream = new rBootItemOutputStream(&it);
 		request->setResponseStream(responseStream);
+
+		debugf("rBootHttpUpdate::start 1.7: FH: %d", system_get_free_heap_size());
 
 		if(i == items.count() - 1) {
 			request->onRequestComplete(RequestCompletedDelegate(&rBootHttpUpdate::updateComplete, this));
@@ -57,10 +61,14 @@ void rBootHttpUpdate::start() {
 			request->onRequestComplete(RequestCompletedDelegate(&rBootHttpUpdate::itemComplete, this));
 		}
 
+		debugf("rBootHttpUpdate::start 2: FH: %d", system_get_free_heap_size());
+
 		if(!send(request)) {
 			debugf("ERROR: Rejected sending new request.");
 			break;
 		}
+
+		debugf("rBootHttpUpdate::start 3: FH: %d", system_get_free_heap_size());
 	}
 }
 
@@ -107,22 +115,23 @@ void rBootHttpUpdate::setDelegate(OtaUpdateDelegate reqUpdateDelegate) {
 
 void rBootHttpUpdate::updateFailed() {
 	debugf("\r\nFirmware download failed..");
-	if (updateDelegate) updateDelegate(*this, false);
+	if (updateDelegate) {
+		updateDelegate(*this, false);
+	}
 	items.clear();
 }
 
 void rBootHttpUpdate::applyUpdate() {
+	items.clear();
 	if (romSlot == NO_ROM_SWITCH) {
 		debugf("Firmware updated.");
-		if (updateDelegate) updateDelegate(*this, true);
-		items.clear();
-	} else {
-		// set to boot new rom and then reboot
-		debugf("Firmware updated, rebooting to rom %d...\r\n", romSlot);
-		rboot_set_current_rom(romSlot);
-		System.restart();
+		return;
 	}
-	return;
+
+	// set to boot new rom and then reboot
+	debugf("Firmware updated, rebooting to rom %d...\r\n", romSlot);
+	rboot_set_current_rom(romSlot);
+	System.restart();
 }
 
 rBootHttpUpdateItem rBootHttpUpdate::getItem(unsigned int index) {

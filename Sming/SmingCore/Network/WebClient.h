@@ -31,8 +31,12 @@ typedef HashMap<String, String> WebClientParams;
 
 typedef enum http_method HttpMethod;
 
+/**
+ * TODO: Make the SimpleConcurrentQueue is really concurrent.
+ * 	     For the moment the name is very misleading.
+ */
 template<typename T, int rawSize>
-class SimpleQueue: public FIFO<T, rawSize> {
+class SimpleConcurrentQueue: public FIFO<T, rawSize> {
 	virtual const T& operator[](unsigned int) const { }
 	virtual T& operator[](unsigned int) { }
 };
@@ -196,7 +200,7 @@ protected:
 };
 
 
-typedef SimpleQueue<WebRequest*, REQUEST_POOL_SIZE> RequestQueue;
+typedef SimpleConcurrentQueue<WebRequest*, REQUEST_POOL_SIZE> RequestQueue;
 
 
 class HttpConnection : protected TcpClient {
@@ -209,6 +213,8 @@ public:
 	bool connect(const String& host, int port, bool useSsl = false, uint32_t sslOptions = 0);
 
 	void send(WebRequest* request);
+
+	bool isActive();
 
 	/**
 	 * @brief Returns pointer to the current request
@@ -325,15 +331,19 @@ public:
 	static void freeSslSessionPool();
 #endif
 
+	/**
+	 * Use this method to clean all request queues and object pools
+	 */
+	static void cleanup();
+
 	virtual ~HttpClient();
 
 protected:
 	String getCacheKey(URL url);
 
 protected:
-	HashMap<String, tcp_pcb* > tcpPool;
-	HashMap<String, HttpConnection *> httpConnectionPool;
-	HashMap<String, RequestQueue* > queue;
+	static HashMap<String, HttpConnection *> httpConnectionPool;
+	static HashMap<String, RequestQueue* > queue;
 
 #ifdef ENABLE_SSL
 	static HashMap<String, SSLSessionId* > sslSessionIdPool;

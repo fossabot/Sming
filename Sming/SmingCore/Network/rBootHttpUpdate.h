@@ -29,17 +29,20 @@ struct rBootHttpUpdateItem {
 
 class rBootItemOutputStream: public IOutputStream {
 public:
-	rBootItemOutputStream(rBootHttpUpdateItem& item) {
+	rBootItemOutputStream(rBootHttpUpdateItem* item) {
 		this->item = item;
-		rBootWriteStatus = rboot_write_init( item.targetOffset );
+		rBootWriteStatus = rboot_write_init( this->item->targetOffset );
 	}
 
 	virtual size_t write(const uint8_t* data, size_t size) {
 		if(!rboot_write_flash(&rBootWriteStatus, (uint8 *)data, size)) {
+			debugf("rboot_write_flash: Failed. Size: %d", size);
 			return -1;
 		}
 
-		item.size += size;
+		item->size += size;
+
+		debugf("rboot_write_flash: item.size: %d", item->size);
 
 		return size;
 	}
@@ -53,7 +56,7 @@ public:
 	}
 
 private:
-	rBootHttpUpdateItem item;
+	rBootHttpUpdateItem* item = NULL;
 	rboot_write_status rBootWriteStatus;
 };
 

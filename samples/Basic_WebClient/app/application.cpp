@@ -72,7 +72,7 @@ void displayCipher(SSL *ssl)
     m_printf("\n");
 }
 
-void onDownload(HttpConnection& connection, bool success)
+int onDownload(HttpConnection& connection, bool success)
 {
 	debugf("Got response code: %d", connection.getResponseCode());
 	debugf("Success: %d", success);
@@ -88,6 +88,8 @@ void onDownload(HttpConnection& connection, bool success)
 		displayCipher(ssl);
 		displaySessionId(ssl);
 	}
+
+	return 1;
 }
 
 void connectOk(IPAddress ip, IPAddress mask, IPAddress gateway)

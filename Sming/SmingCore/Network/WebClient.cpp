@@ -9,6 +9,8 @@
 
 #include "WebClient.h"
 
+#include "lwip/tcp_impl.h"
+
 // WebRequest
 
 WebRequest::WebRequest(URL uri) {
@@ -156,17 +158,39 @@ HttpConnection::HttpConnection(RequestQueue* queue): TcpClient(false), mode(eHCM
 }
 
 bool HttpConnection::connect(const String& host, int port, bool useSsl /* = false */, uint32_t sslOptions /* = 0 */) {
+
+	debugf("HttpConnection::connect: TCP state: %d, isStarted: %d, isActive: %d", (tcp != NULL? tcp->state : -1), (int)(getConnectionState() != eTCS_Ready), (int)isActive());
+
 	if(isProcessing()) {
 		return true;
 	}
 
-	if(tcp && tcp->state != CLOSED) {
+	if(getConnectionState() != eTCS_Ready && isActive()) {
+		debugf("HttpConnection::reusing TCP connection ");
+
 		// we might have still alive connection
 		onConnected(ERR_OK);
 		return true;
 	}
 
+	debugf("HttpConnection::connecting ...");
+
 	return TcpClient::connect(host, port, useSsl, sslOptions);
+}
+
+bool HttpConnection::isActive() {
+	if(tcp == NULL) {
+		return false;
+	}
+
+	struct tcp_pcb *pcb;
+	for(pcb = tcp_active_pcbs; pcb != NULL; pcb = pcb->next) {
+		if(tcp == pcb) {
+			return true;
+		}
+	}
+
+	return false;
 }
 
 // @deprecated
@@ -222,8 +246,6 @@ void HttpConnection::reset()
 
 	code = 0;
 	responseStringData = "";
-//	waitParse = true;
-//	writeError = false;
 	responseHeaders.clear();
 
 	lastWasValue = true;
@@ -275,6 +297,11 @@ int HttpConnection::staticOnMessageComplete(http_parser* parser)
 		return -2; // no current request...
 	}
 
+	debugf("staticOnMessageComplete: Execution queue: %d, %s",
+								connection->executionQueue.count(),
+								connection->currentRequest->uri.toString().c_str()
+								);
+
 	// we are finished with this request
 	int hasError = 0;
 	if(connection->currentRequest->requestCompletedDelegate) {
@@ -291,7 +318,6 @@ int HttpConnection::staticOnMessageComplete(http_parser* parser)
 	delete connection->currentRequest;
 	connection->currentRequest = NULL;
 
-	debugf("staticOnMessageComplete: Execution queue: %d", connection->executionQueue.count());
 	if(!connection->executionQueue.count()) {
 		connection->onConnected(ERR_OK);
 	}
@@ -444,30 +470,49 @@ err_t HttpConnection::onConnected(err_t err) {
 			parserSettings.on_body              = staticOnBody;
 		}
 
+		debugf("HttpConnection::onConnected: waitingQueue.count: %d", waitingQueue->count());
+
 		for(int i=0; i< waitingQueue->count(); i++) {
-			WebRequest* request = waitingQueue->peek();
+			debugf("HttpConnection::onConnected 1 > ");
+			WebRequest* request = waitingQueue->peek(); // TODO: make sure that peek returns NULL if there are no elements
 			if(request == NULL) {
 				break;
 			}
+
+			debugf("HttpConnection::onConnected 2 > ");
 
 			if(!executionQueue.enqueue(request)) {
 				debugf("The working queue is full at the moment");
 				break;
 			}
 
-			waitingQueue->dequeue();
+			debugf("HttpConnection::onConnected 3 > ");
+
+			waitingQueue->dequeue(); // Make sure that dequeue returns null if there are no elements
 			send(request);
+
+			debugf("HttpConnection::onConnected 4 > ");
 
 			if(!(request->method == HTTP_GET || request->method == HTTP_HEAD)) {
 				// if the current request cannot be pipelined -> break;
 				break;
 			}
 
-			WebRequest* nextRequest = waitingQueue->peek();
+			debugf("HttpConnection::onConnected 5 > ");
+
+			if(!waitingQueue->count()) {
+				break;
+			}
+
+			debugf("HttpConnection::onConnected 6 > ");
+
+			WebRequest* nextRequest = waitingQueue->peek(); // Make sure that dequeue returns null if there are no elements
 			if(nextRequest != NULL && !(nextRequest->method == HTTP_GET || nextRequest->method == HTTP_HEAD))  {
 				// if the next request cannot be pipelined -> break for now
 				break;
 			}
+
+			debugf("HttpConnection::onConnected 7 > ");
 		}
 	}
 
@@ -491,6 +536,9 @@ void HttpConnection::send(WebRequest* request) {
 			request->requestHeaders.remove("Content-Length");
 		}
 		request->requestHeaders["Transfer-Encoding"] = "chunked";
+	}
+	else {
+		request->requestHeaders["Content-Length"] = "0";
 	}
 
 	for (int i = 0; i < request->requestHeaders.count(); i++)
@@ -611,9 +659,20 @@ bool HttpClient::send(WebRequest* request) {
 		return false;
 	}
 
+	if(httpConnectionPool.contains(cacheKey) &&
+	   !(httpConnectionPool[cacheKey]->getConnectionState() == eTCS_Ready || httpConnectionPool[cacheKey]->isActive())
+	) {
+		httpConnectionPool.remove(cacheKey);
+	}
+
 	if(!httpConnectionPool.contains(cacheKey)) {
+		debugf("Creating new httpConnection");
 		httpConnectionPool[cacheKey] = new HttpConnection(queue[cacheKey]);
 	}
+
+	// if that is old httpConnection object from another httpClient -> reuse it and add the new queue.
+	// TODO: check if that is working as expected...
+//	httpConnectionPool[cacheKey]->waitingQueue = queue[cacheKey];
 
 #ifdef ENABLE_SSL
 	// Based on the URL decide if we should reuse the SSL and TCP pool
@@ -694,6 +753,11 @@ WebRequest* HttpClient::request(const String& url) {
 	return new WebRequest(URL(url));
 }
 
+HashMap<String, HttpConnection *> HttpClient::httpConnectionPool;
+HashMap<String, RequestQueue* > HttpClient::queue;
+
+// TODO:: Free connection pool
+
 #ifdef ENABLE_SSL
 HashMap<String, SSLSessionId* > HttpClient::sslSessionIdPool;
 
@@ -709,9 +773,17 @@ void HttpClient::freeSslSessionPool() {
 }
 #endif
 
-HttpClient::~HttpClient() {
-	queue.clear();
+void HttpClient::cleanup() {
+#ifdef ENABLE_SSL
+	freeSslSessionPool();
+#endif
 	httpConnectionPool.clear();
+	queue.clear();
+}
+
+
+HttpClient::~HttpClient() {
+
 }
 
 String HttpClient::getCacheKey(URL url) {

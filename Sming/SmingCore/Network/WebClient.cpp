@@ -688,7 +688,7 @@ bool HttpClient::downloadString(const String& url, RequestCompletedDelegate requ
 				);
 }
 
-bool HttpClient::downloadFile(String url, String saveFileName, RequestCompletedDelegate requestComplete /* = NULL */)
+bool HttpClient::downloadFile(const String& url, const String& saveFileName, RequestCompletedDelegate requestComplete /* = NULL */)
 {
 	URL uri = URL(url);
 

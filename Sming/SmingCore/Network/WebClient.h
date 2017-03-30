@@ -340,7 +340,11 @@ public:
 
 	bool downloadString(const String& url, RequestCompletedDelegate requestComplete);
 
-	bool downloadFile(String url, String saveFileName, RequestCompletedDelegate requestComplete = NULL);
+	__forceinline bool downloadFile(const String& url, RequestCompletedDelegate requestComplete = NULL) {
+		return downloadFile(url, "", requestComplete);
+	}
+
+	bool downloadFile(const String& url, const String& saveFileName, RequestCompletedDelegate requestComplete = NULL);
 
 	/* Low Level Methods */
 	bool send(WebRequest* request);

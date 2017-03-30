@@ -37,8 +37,27 @@ typedef enum http_method HttpMethod;
  */
 template<typename T, int rawSize>
 class SimpleConcurrentQueue: public FIFO<T, rawSize> {
+public:
 	virtual const T& operator[](unsigned int) const { }
 	virtual T& operator[](unsigned int) { }
+
+	T peek() const
+	{
+	  if(!FIFO<T, rawSize>::numberOfElements) {
+		  return NULL;
+	  }
+
+	  return FIFO<T, rawSize>::peek();
+	}
+
+	T dequeue()
+	{
+	  if(!FIFO<T, rawSize>::numberOfElements) {
+		return NULL;
+	  }
+
+	  return FIFO<T, rawSize>::dequeue();
+	}
 };
 
 

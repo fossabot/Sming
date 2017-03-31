@@ -29,33 +29,14 @@ struct rBootHttpUpdateItem {
 
 class rBootItemOutputStream: public IOutputStream {
 public:
-	rBootItemOutputStream(rBootHttpUpdateItem* item) {
-		this->item = item;
-		rBootWriteStatus = rboot_write_init( this->item->targetOffset );
-	}
+	void setItem(rBootHttpUpdateItem* item);
+	virtual bool init();
+	virtual size_t write(const uint8_t* data, size_t size);
+	virtual bool close();
+	virtual ~rBootItemOutputStream();
 
-	virtual size_t write(const uint8_t* data, size_t size) {
-		if(!rboot_write_flash(&rBootWriteStatus, (uint8 *)data, size)) {
-			debugf("rboot_write_flash: Failed. Size: %d", size);
-			return -1;
-		}
-
-		item->size += size;
-
-		debugf("rboot_write_flash: item.size: %d", item->size);
-
-		return size;
-	}
-
-	virtual bool close() {
-		return rboot_write_end(&rBootWriteStatus);
-	}
-
-	virtual ~rBootItemOutputStream() {
-		close();
-	}
-
-private:
+protected:
+	bool initilized = false;
 	rBootHttpUpdateItem* item = NULL;
 	rboot_write_status rBootWriteStatus;
 };
@@ -67,7 +48,7 @@ public:
 	virtual ~rBootHttpUpdate();
 	void addItem(int offset, String firmwareFileUrl);
 	void start();
-	void switchToRom(uint8 romSlot);
+	void switchToRom(uint8_t romSlot);
 	void setCallback(OtaUpdateDelegate reqUpdateDelegate);
 	void setDelegate(OtaUpdateDelegate reqUpdateDelegate);
 
@@ -88,6 +69,7 @@ protected:
 	void applyUpdate();
 	void updateFailed();
 
+	virtual rBootItemOutputStream* getStream();
 	virtual int itemComplete(HttpConnection& client, bool success);
 	virtual int updateComplete(HttpConnection& client, bool success);
 
@@ -96,7 +78,7 @@ protected:
 	Vector<rBootHttpUpdateItem> items;
 	int currentItem;
 	rboot_write_status rBootWriteStatus;
-	uint8 romSlot;
+	uint8_t romSlot;
 	OtaUpdateDelegate updateDelegate;
 
 	WebRequest* baseRequest = NULL;

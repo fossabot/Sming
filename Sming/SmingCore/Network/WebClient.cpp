@@ -8,6 +8,7 @@
  ****/
 
 #include "WebClient.h"
+#include "../../Services/WebHelpers/base64.h"
 
 #include "lwip/tcp_impl.h"
 
@@ -51,6 +52,10 @@ WebRequest& WebRequest::operator = (const WebRequest& rhs) {
 	return *this;
 }
 
+WebRequest::~WebRequest() {
+
+}
+
 WebRequest* WebRequest::setURL(URL uri) {
 	this->uri = uri;
 	return this;
@@ -65,6 +70,17 @@ WebRequest* WebRequest::setHeaders(const Headers& headers) {
 	for(int i=0; i < headers.count(); i++) {
 		this->requestHeaders[headers.keyAt(i)] = headers.valueAt(i);
 	}
+	return this;
+}
+
+WebRequest* WebRequest::setHeader(const String& name, const String& value) {
+	this->requestHeaders[name] = value; // TODO: add here name and/or value escaping.
+	return this;
+}
+
+WebRequest* WebRequest::setAuth(AuthAdapter *adapter) {
+	adapter->setRequest(this);
+	auth = adapter;
 	return this;
 }
 
@@ -151,6 +167,69 @@ String WebRequest::toString() {
 	return content;
 }
 #endif
+
+// Authentication
+
+HttpBasicAuth::HttpBasicAuth(const String& username, const String& password) {
+	this->username = username;
+	this->password = password;
+}
+
+// Basic Auth
+void HttpBasicAuth::setRequest(WebRequest* request) {
+	String clearText = username+":" + password;
+	int hashLength = clearText.length() * 4;
+	char hash[hashLength];
+	base64_encode(clearText.length(), (const unsigned char *)clearText.c_str(), hashLength, hash);
+
+	request->setHeader("Authorization", "Basic "+ String(hash));
+}
+
+// Digest Auth
+HttpDigestAuth::HttpDigestAuth(const String& username, const String& password) {
+	this->username = username;
+	this->password = password;
+}
+
+void HttpDigestAuth::setRequest(WebRequest* request) {
+	this->request = request;
+}
+
+void HttpDigestAuth::setResponse(WebResponse *response) {
+	if(response->code != HTTP_STATUS_UNAUTHORIZED) {
+		return;
+	}
+
+	if(response->headers.contains("WWW-Authenticate") && response->headers["WWW-Authenticate"].indexOf("Digest")!=-1) {
+		String authHeader = response->headers["WWW-Authenticate"];
+		/*
+		 * Example (see: https://tools.ietf.org/html/rfc2069#page-4):
+		 *
+		 * WWW-Authenticate: Digest    realm="testrealm@host.com",
+                            nonce="dcd98b7102dd2f0e8b11d0f600bfb0c093",
+                            opaque="5ccc069c403ebaf9f0171e9517f40e41"
+		 *
+		 */
+
+		// TODO: process WWW-Authenticate header
+
+		String authResponse = "Digest username=\"" + username + "\"";
+		/*
+		 * Example (see: https://tools.ietf.org/html/rfc2069#page-4):
+		 *
+		 * Authorization: Digest       username="Mufasa",
+                            realm="testrealm@host.com",
+                            nonce="dcd98b7102dd2f0e8b11d0f600bfb0c093",
+                            uri="/dir/index.html",
+                            response="e966c932a9242554e42c8ee200cec7f6",
+                            opaque="5ccc069c403ebaf9f0171e9517f40e41"
+		 */
+
+		// TODO: calculate the response...
+		request->setHeader("Authorization", authResponse);
+		request->retries = 1;
+	}
+}
 
 // HttpConnection
 HttpConnection::HttpConnection(RequestQueue* queue): TcpClient(false), mode(eHCM_String) {
@@ -308,6 +387,15 @@ int HttpConnection::staticOnMessageComplete(http_parser* parser)
 		bool success = (HTTP_PARSER_ERRNO(parser) == HPE_OK) &&  // false when the parsing has failed
 					   (connection->code >= 200 && connection->code <= 399);  // false when the HTTP status code is not ok
 		hasError = connection->currentRequest->requestCompletedDelegate(*connection, success);
+	}
+
+	if(connection->currentRequest->auth != NULL) {
+		connection->currentRequest->auth->setResponse(connection->getResponse());
+	}
+
+	if(connection->currentRequest->retries > 0) {
+		connection->currentRequest->retries--;
+		return (connection->executionQueue.enqueue(connection->currentRequest)? 0: -1);
 	}
 
 	if(connection->currentRequest->outputStream != NULL) {
@@ -472,8 +560,8 @@ err_t HttpConnection::onConnected(err_t err) {
 
 		debugf("HttpConnection::onConnected: waitingQueue.count: %d", waitingQueue->count());
 
-		for(int i=0; i< waitingQueue->count(); i++) {
-			WebRequest* request = waitingQueue->peek(); // TODO: make sure that peek returns NULL if there are no elements
+		do {
+			WebRequest* request = waitingQueue->peek();
 			if(request == NULL) {
 				break;
 			}
@@ -483,7 +571,7 @@ err_t HttpConnection::onConnected(err_t err) {
 				break;
 			}
 
-			waitingQueue->dequeue(); // Make sure that dequeue returns null if there are no elements
+			waitingQueue->dequeue();
 			send(request);
 
 			if(!(request->method == HTTP_GET || request->method == HTTP_HEAD)) {
@@ -491,16 +579,12 @@ err_t HttpConnection::onConnected(err_t err) {
 				break;
 			}
 
-			if(!waitingQueue->count()) {
-				break;
-			}
-
-			WebRequest* nextRequest = waitingQueue->peek(); // Make sure that dequeue returns null if there are no elements
+			WebRequest* nextRequest = waitingQueue->peek();
 			if(nextRequest != NULL && !(nextRequest->method == HTTP_GET || nextRequest->method == HTTP_HEAD))  {
 				// if the next request cannot be pipelined -> break for now
 				break;
 			}
-		}
+		} while(1);
 	}
 
 	TcpClient::onConnected(err);

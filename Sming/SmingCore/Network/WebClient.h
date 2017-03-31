@@ -60,7 +60,6 @@ public:
 	}
 };
 
-
 enum HttpClientMode
 {
 	eHCM_String = 0,
@@ -114,6 +113,8 @@ enum HttpClientMode
  *
  */
 
+class AuthAdapter;
+
 class HttpConnection;
 
 typedef HashMap<String, String> Headers;
@@ -143,7 +144,7 @@ public:
 	WebRequest(const WebRequest& value);
 	__forceinline WebRequest* clone() const { return new WebRequest(*this); }
 	WebRequest& operator = (const WebRequest& rhs);
-
+	~WebRequest();
 
 	WebRequest* setURL(URL uri);
 
@@ -151,8 +152,10 @@ public:
 
 	WebRequest* setHeaders(const Headers& headers);
 
-//	TODO: here we can add authentication adapters, if needed
-//	WebRequest* setAuth(Adapter...)
+	WebRequest* setHeader(const String& name, const String& value);
+
+	// Authentication adapters set here
+	WebRequest* setAuth(AuthAdapter *adapter);
 
 #ifdef ENABLE_SSL
  	WebRequest* setSslOptions(uint32_t sslOptions);
@@ -200,16 +203,20 @@ public:
 	HttpMethod method = HTTP_GET;
 	Headers requestHeaders;
 
+	int retries = 0; // how many times the request should be send again...
+
 protected:
 	RequestHeadersCompletedDelegate headersCompletedDelegate;
 	RequestBodyDelegate requestBodyDelegate;
 	RequestCompletedDelegate requestCompletedDelegate;
+
 	String bodyAsString;
 	uint8_t *rawData = NULL;
 	size_t rawDataLength = 0;
 	IDataSourceStream *stream=NULL;
-
 	IOutputStream *outputStream=NULL;
+
+	AuthAdapter *auth = NULL;
 
 #ifdef ENABLE_SSL
 	uint32_t sslOptions = 0;
@@ -218,8 +225,45 @@ protected:
 #endif
 };
 
-
 typedef SimpleConcurrentQueue<WebRequest*, REQUEST_POOL_SIZE> RequestQueue;
+
+// HTTP Authentication
+
+class AuthAdapter {
+public:
+	virtual void setRequest(WebRequest* request) = 0;
+
+	__forceinline virtual void setResponse(WebResponse *response) {
+		return;
+	}
+
+	virtual ~AuthAdapter() {}
+};
+
+
+class HttpBasicAuth: public AuthAdapter {
+public:
+	HttpBasicAuth(const String& username, const String& password);
+
+	void setRequest(WebRequest* request);
+private:
+	String username;
+	String password;
+};
+
+class HttpDigestAuth: public AuthAdapter {
+public:
+	HttpDigestAuth(const String& username, const String& password);
+
+	void setRequest(WebRequest* request);
+
+	void setResponse(WebResponse *response);
+
+private:
+	String username;
+	String password;
+	WebRequest* request=NULL;
+};
 
 
 class HttpConnection : protected TcpClient {

@@ -542,6 +542,8 @@ err_t HttpConnection::onConnected(err_t err) {
 			http_parser_init(parser, HTTP_RESPONSE);
 			parser->data = (void*)this;
 
+			memset(&parserSettings, 0, sizeof(parserSettings));
+
 			// Notification callbacks: on_message_begin, on_headers_complete, on_message_complete.
 			parserSettings.on_message_begin     = staticOnMessageBegin;
 			parserSettings.on_headers_complete  = staticOnHeadersComplete;

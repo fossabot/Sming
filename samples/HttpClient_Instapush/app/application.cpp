@@ -40,9 +40,9 @@ public:
 	{
 		debugf("preparing request");
 
-		WebRequest *request = new WebRequest(URL(url));
+		HttpRequest *request = new HttpRequest(URL(url));
 
-		Headers requestHeaders;
+		HttpHeaders requestHeaders;
 		requestHeaders["Content-Type"] = "application/json";
 		requestHeaders["x-instapush-appid"] =  app;
 		requestHeaders["x-instapush-appsecret"] =  secret;

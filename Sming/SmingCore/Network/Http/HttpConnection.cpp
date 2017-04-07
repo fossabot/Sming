@@ -1,237 +1,24 @@
 /****
  * Sming Framework Project - Open Source framework for high efficiency native ESP8266 development.
  * Created 2015 by Skurydin Alexey
+ * http://github.com/anakod/Sming
  *
- * Authors: 2017-... Slavey Karadzhov <slav@attachix.com>
+ * HttpConnection
+ *
+ * @author: 2017 - Slavey Karadzhov <slav@attachix.com>
  *
  * All files of the Sming Core are provided under the LGPL v3 license.
  ****/
 
-#include "WebClient.h"
-#include "../../Services/WebHelpers/base64.h"
+#include "HttpConnection.h"
 
+#ifdef __LINUX__
+// TODO: check if this is ESP
+#include "lwip/priv/tcp_priv.h"
+#else
 #include "lwip/tcp_impl.h"
-
-// WebRequest
-
-WebRequest::WebRequest(URL uri) {
-	this->uri = uri;
-}
-
-WebRequest::WebRequest(const WebRequest& value) {
-	*this = value;
-	method = value.method;
-	uri = value.uri;
-	if(value.requestHeaders.count()) {
-		setHeaders(value.requestHeaders);
-	}
-	headersCompletedDelegate = value.headersCompletedDelegate;
-	requestBodyDelegate = value.requestBodyDelegate;
-	requestCompletedDelegate = value.requestCompletedDelegate;
-
-	bodyAsString = value.bodyAsString;
-	rawData = value.rawData;
-	rawDataLength = value.rawDataLength;
-
-	// Notice: We do not copy streams.
-
-#ifdef ENABLE_SSL
-	sslOptions = value.sslOptions;
-	sslFingerprint = value.sslFingerprint;
-	sslClientKeyCert = value.sslClientKeyCert;
-#endif
-}
-
-WebRequest& WebRequest::operator = (const WebRequest& rhs) {
-	if (this == &rhs) return *this;
-
-	// TODO: FIX this...
-//	if (rhs.buffer) copy(rhs.buffer, rhs.len);
-//	else invalidate();
-
-	return *this;
-}
-
-WebRequest::~WebRequest() {
-
-}
-
-WebRequest* WebRequest::setURL(URL uri) {
-	this->uri = uri;
-	return this;
-}
-
-WebRequest* WebRequest::setMethod(const HttpMethod method) {
-	this->method = method;
-	return this;
-}
-
-WebRequest* WebRequest::setHeaders(const Headers& headers) {
-	for(int i=0; i < headers.count(); i++) {
-		this->requestHeaders[headers.keyAt(i)] = headers.valueAt(i);
-	}
-	return this;
-}
-
-WebRequest* WebRequest::setHeader(const String& name, const String& value) {
-	this->requestHeaders[name] = value; // TODO: add here name and/or value escaping.
-	return this;
-}
-
-WebRequest* WebRequest::setAuth(AuthAdapter *adapter) {
-	adapter->setRequest(this);
-	auth = adapter;
-	return this;
-}
-
-WebRequest* WebRequest::setResponseStream(IOutputStream *stream) {
-	outputStream = stream;
-	return this;
-}
-
-#ifdef ENABLE_SSL
-WebRequest* WebRequest::setSslOptions(uint32_t sslOptions) {
-	this->sslOptions = sslOptions;
- 	return this;
-}
-
-uint32_t WebRequest::getSslOptions() {
- 	return sslOptions;
-}
-
-WebRequest* WebRequest::pinCertificate(SSLFingerprints fingerprints) {
-	sslFingerprint = fingerprints;
-	return this;
-}
-
-WebRequest* WebRequest::setSslClientKeyCert(SSLKeyCertPair clientKeyCert) {
-	this->sslClientKeyCert = clientKeyCert;
-	return this;
-}
-
 #endif
 
-WebRequest* WebRequest::setBody(const String& body) {
-	bodyAsString = body;
-	return this;
-}
-
-WebRequest* WebRequest::setBody(uint8_t *rawData, size_t length) {
-	this->rawData = rawData;
-	this->rawDataLength = length;
-	return this;
-}
-
-WebRequest* WebRequest::setBody(IDataSourceStream *stream) {
-	this->stream = stream;
-	return this;
-}
-
-WebRequest* WebRequest::onBody(RequestBodyDelegate delegateFunction) {
-	requestBodyDelegate = delegateFunction;
-	return this;
-}
-
-WebRequest* WebRequest::onHeadersComplete(RequestHeadersCompletedDelegate delegateFunction) {
-	this->headersCompletedDelegate = delegateFunction;
-	return this;
-}
-
-WebRequest* WebRequest::onRequestComplete(RequestCompletedDelegate delegateFunction) {
-	this->requestCompletedDelegate = delegateFunction;
-	return this;
-}
-
-#ifndef SMING_RELEASE
-String WebRequest::toString() {
-	String content = "";
-#ifdef ENABLE_SSL
-	content += "> SSL options: " + String(sslOptions) + "\n";
-	content += "> SSL Cert Fingerprint Length: " + String((sslFingerprint.certSha1 == NULL)? 0: SHA1_SIZE) + "\n";
-	content += "> SSL PK Fingerprint Length: " + String((sslFingerprint.pkSha256 == NULL)? 0: SHA256_SIZE) + "\n";
-	content += "> SSL ClientCert Length: " + String(sslClientKeyCert.certificateLength) + "\n";
-	content += "> SSL ClientCert PK Length: " + String(sslClientKeyCert.keyLength) + "\n";
-	content += "\n";
-#endif
-
-	content += http_method_str(method) + String(" ") + uri.getPathWithQuery() + " HTTP/1.1\n";
-	content += "Host: " + uri.Host + ":" + uri.Port + "\n";
-	for(int i=0; i< requestHeaders.count(); i++) {
-		content += requestHeaders.keyAt(i) + ": " + requestHeaders.valueAt(i) + "\n";
-	}
-
-	if(rawDataLength) {
-		content += "Content-Length: " + String(rawDataLength);
-	}
-
-	return content;
-}
-#endif
-
-// Authentication
-
-HttpBasicAuth::HttpBasicAuth(const String& username, const String& password) {
-	this->username = username;
-	this->password = password;
-}
-
-// Basic Auth
-void HttpBasicAuth::setRequest(WebRequest* request) {
-	String clearText = username+":" + password;
-	int hashLength = clearText.length() * 4;
-	char hash[hashLength];
-	base64_encode(clearText.length(), (const unsigned char *)clearText.c_str(), hashLength, hash);
-
-	request->setHeader("Authorization", "Basic "+ String(hash));
-}
-
-// Digest Auth
-HttpDigestAuth::HttpDigestAuth(const String& username, const String& password) {
-	this->username = username;
-	this->password = password;
-}
-
-void HttpDigestAuth::setRequest(WebRequest* request) {
-	this->request = request;
-}
-
-void HttpDigestAuth::setResponse(WebResponse *response) {
-	if(response->code != HTTP_STATUS_UNAUTHORIZED) {
-		return;
-	}
-
-	if(response->headers.contains("WWW-Authenticate") && response->headers["WWW-Authenticate"].indexOf("Digest")!=-1) {
-		String authHeader = response->headers["WWW-Authenticate"];
-		/*
-		 * Example (see: https://tools.ietf.org/html/rfc2069#page-4):
-		 *
-		 * WWW-Authenticate: Digest    realm="testrealm@host.com",
-                            nonce="dcd98b7102dd2f0e8b11d0f600bfb0c093",
-                            opaque="5ccc069c403ebaf9f0171e9517f40e41"
-		 *
-		 */
-
-		// TODO: process WWW-Authenticate header
-
-		String authResponse = "Digest username=\"" + username + "\"";
-		/*
-		 * Example (see: https://tools.ietf.org/html/rfc2069#page-4):
-		 *
-		 * Authorization: Digest       username="Mufasa",
-                            realm="testrealm@host.com",
-                            nonce="dcd98b7102dd2f0e8b11d0f600bfb0c093",
-                            uri="/dir/index.html",
-                            response="e966c932a9242554e42c8ee200cec7f6",
-                            opaque="5ccc069c403ebaf9f0171e9517f40e41"
-		 */
-
-		// TODO: calculate the response...
-		request->setHeader("Authorization", authResponse);
-		request->retries = 1;
-	}
-}
-
-// HttpConnection
 HttpConnection::HttpConnection(RequestQueue* queue): TcpClient(false), mode(eHCM_String) {
 	this->waitingQueue = queue;
 }
@@ -542,8 +329,6 @@ err_t HttpConnection::onConnected(err_t err) {
 			http_parser_init(parser, HTTP_RESPONSE);
 			parser->data = (void*)this;
 
-			memset(&parserSettings, 0, sizeof(parserSettings));
-
 			// Notification callbacks: on_message_begin, on_headers_complete, on_message_complete.
 			parserSettings.on_message_begin     = staticOnMessageBegin;
 			parserSettings.on_headers_complete  = staticOnHeadersComplete;
@@ -563,7 +348,7 @@ err_t HttpConnection::onConnected(err_t err) {
 		debugf("HttpConnection::onConnected: waitingQueue.count: %d", waitingQueue->count());
 
 		do {
-			WebRequest* request = waitingQueue->peek();
+			HttpRequest* request = waitingQueue->peek();
 			if(request == NULL) {
 				break;
 			}
@@ -581,7 +366,7 @@ err_t HttpConnection::onConnected(err_t err) {
 				break;
 			}
 
-			WebRequest* nextRequest = waitingQueue->peek();
+			HttpRequest* nextRequest = waitingQueue->peek();
 			if(nextRequest != NULL && !(nextRequest->method == HTTP_GET || nextRequest->method == HTTP_HEAD))  {
 				// if the next request cannot be pipelined -> break for now
 				break;
@@ -593,7 +378,7 @@ err_t HttpConnection::onConnected(err_t err) {
 	return ERR_OK;
 }
 
-void HttpConnection::send(WebRequest* request) {
+void HttpConnection::send(HttpRequest* request) {
 	sendString(http_method_str(request->method) + String(" ") + request->uri.getPathWithQuery() + " HTTP/1.1\r\nHost: " + request->uri.Host + "\r\n");
 
 	// take care to adjust the content-length
@@ -637,17 +422,18 @@ void HttpConnection::send(WebRequest* request) {
 	}
 }
 
-WebRequest* HttpConnection::getRequest() {
+HttpRequest* HttpConnection::getRequest() {
 	return currentRequest;
 }
 
-WebResponse* HttpConnection::getResponse() {
-	WebResponse* response = new WebResponse();
+HttpResponse* HttpConnection::getResponse() {
+	HttpResponse* response = new HttpResponse();
 	response->code = code;
 	response->headers = responseHeaders;
-	if(currentRequest) {
-		response->stream = currentRequest->outputStream;
-	}
+// TODO: fix this...
+//	if(currentRequest) {
+//		response->stream = currentRequest->outputStream;
+//	}
 	response->bodyAsString = responseStringData;
 }
 
@@ -667,9 +453,16 @@ err_t HttpConnection::onReceive(pbuf *buf) {
 		if(HTTP_PARSER_ERRNO(parser) != HPE_OK) {
 			// we ran into trouble - abort the connection
 			debugf("HTTP parser error: %s", http_errno_name(HTTP_PARSER_ERRNO(parser)));
-			cleanup();
-			TcpClient::onReceive(NULL);
-			return ERR_ABRT;
+			reset();
+
+			if(HTTP_PARSER_ERRNO(parser) >= HPE_INVALID_EOF_STATE) {
+				cleanup();
+				TcpConnection::onReceive(NULL);
+				return ERR_ABRT; // abort the connection on HTTP parsing error.
+			}
+
+			TcpClient::onReceive(buf);
+			return ERR_OK;
 		}
 
 		cur = cur->next;
@@ -715,150 +508,3 @@ HttpConnection::~HttpConnection() {
 	cleanup();
 }
 
-// WebClient
-
-/* Low Level Methods */
-bool HttpClient::send(WebRequest* request) {
-	String cacheKey = getCacheKey(request->uri);
-	bool useSsl = (request->uri.Protocol == HTTPS_URL_PROTOCOL);
-
-	if(!queue.contains(cacheKey)) {
-		queue[cacheKey] = new RequestQueue;
-	}
-
-	if(!queue[cacheKey]->enqueue(request)) {
-		// the queue is full and we cannot add more requests at the time.
-		debugf("The request queue is full at the moment");
-		return false;
-	}
-
-	if(httpConnectionPool.contains(cacheKey) &&
-	   !(httpConnectionPool[cacheKey]->getConnectionState() == eTCS_Ready || httpConnectionPool[cacheKey]->isActive())
-	) {
-		httpConnectionPool.remove(cacheKey);
-	}
-
-	if(!httpConnectionPool.contains(cacheKey)) {
-		debugf("Creating new httpConnection");
-		httpConnectionPool[cacheKey] = new HttpConnection(queue[cacheKey]);
-	}
-
-	// if that is old httpConnection object from another httpClient -> reuse it and add the new queue.
-	// TODO: check if that is working as expected...
-//	httpConnectionPool[cacheKey]->waitingQueue = queue[cacheKey];
-
-#ifdef ENABLE_SSL
-	// Based on the URL decide if we should reuse the SSL and TCP pool
-	if(useSsl) {
-		if (!sslSessionIdPool.contains(cacheKey)) {
-			sslSessionIdPool[cacheKey] = (SSLSessionId *)malloc(sizeof(SSLSessionId));
-			sslSessionIdPool[cacheKey]->value = NULL;
-			sslSessionIdPool[cacheKey]->length = 0;
-		}
-		httpConnectionPool[cacheKey]->addSslOptions(request->getSslOptions());
-		httpConnectionPool[cacheKey]->pinCertificate(request->sslFingerprint);
-		httpConnectionPool[cacheKey]->setSslClientKeyCert(request->sslClientKeyCert);
-		httpConnectionPool[cacheKey]->sslSessionId = sslSessionIdPool[cacheKey];
-	}
-#endif
-
-	return httpConnectionPool[cacheKey]->connect(request->uri.Host, request->uri.Port, useSsl);
-}
-
-// @deprecated
-
-bool HttpClient::downloadString(const String& url, RequestCompletedDelegate requestComplete) {
-	return send(request(url)
-				->setMethod(HTTP_GET)
-				->onRequestComplete(requestComplete)
-				);
-}
-
-bool HttpClient::downloadFile(const String& url, const String& saveFileName, RequestCompletedDelegate requestComplete /* = NULL */)
-{
-	URL uri = URL(url);
-
-	String file;
-	if (saveFileName.length() == 0)
-	{
-		file = uri.Path;
-		int p = file.lastIndexOf('/');
-		if (p != -1)
-			file = file.substring(p + 1);
-	}
-	else
-		file = saveFileName;
-
-	FileOutputStream* fileStream = new FileOutputStream(saveFileName);
-
-	return send(request(url)
-				   ->setResponseStream(fileStream)
-				   ->setMethod(HTTP_GET)
-				   ->onRequestComplete(requestComplete)
-			  );
-}
-
-// @enddeprecated
-
-// HttpConnection ...
-
-bool HttpConnection::send(IDataSourceStream* inputStream, bool forceCloseAfterSent /* = false*/)
-{
-	do {
-		int len = 256;
-		char data[len];
-		len = inputStream->readMemoryBlock(data, len);
-
-		// send the data in chunks...
-		sendString(String(len)+ "\r\n");
-		TcpClient::send(data, len);
-		sendString("\n\r");
-		inputStream->seek(max(len, 0));
-	} while(!inputStream->isFinished());
-
-	sendString("0\r\n\r\n", forceCloseAfterSent);
-
-	return true;
-}
-
-
-WebRequest* HttpClient::request(const String& url) {
-	return new WebRequest(URL(url));
-}
-
-HashMap<String, HttpConnection *> HttpClient::httpConnectionPool;
-HashMap<String, RequestQueue* > HttpClient::queue;
-
-// TODO:: Free connection pool
-
-#ifdef ENABLE_SSL
-HashMap<String, SSLSessionId* > HttpClient::sslSessionIdPool;
-
-void HttpClient::freeSslSessionPool() {
-	for(int i=0; i< sslSessionIdPool.count(); i ++) {
-		String key = sslSessionIdPool.keyAt(i);
-		if(sslSessionIdPool[key]->value != NULL) {
-			free(sslSessionIdPool[key]->value);
-		}
-		free(sslSessionIdPool[key]->value);
-	}
-	sslSessionIdPool.clear();
-}
-#endif
-
-void HttpClient::cleanup() {
-#ifdef ENABLE_SSL
-	freeSslSessionPool();
-#endif
-	httpConnectionPool.clear();
-	queue.clear();
-}
-
-
-HttpClient::~HttpClient() {
-
-}
-
-String HttpClient::getCacheKey(URL url) {
-	return String(url.Host) + ":" + String(url.Port);
-}

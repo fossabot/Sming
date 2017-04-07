@@ -100,7 +100,7 @@ void gotIP(IPAddress ip, IPAddress netmask, IPAddress gateway)
 
 	debugf("Connected. Got IP: %s", ip.toString().c_str());
 
-	WebRequest* request = new WebRequest(URL("https://www.google.com/"));
+	HttpRequest* request = new HttpRequest(URL("https://www.google.com/"));
 	request->setSslOptions(SSL_SERVER_VERIFY_LATER);
 
 	SSLFingerprints fingerprint;

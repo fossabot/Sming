@@ -15,7 +15,7 @@ void rBootItemOutputStream::setItem(rBootHttpUpdateItem* item) {
 }
 
 bool rBootItemOutputStream::init() {
-	if(item == NULL) {
+	if(item != NULL) {
 		debugf("rBootItemOutputStream: Item must be set!");
 		return false;
 	}
@@ -72,7 +72,7 @@ void rBootHttpUpdate::addItem(int offset, String firmwareFileUrl) {
 	items.add(add);
 }
 
-void rBootHttpUpdate::setBaseRequest(WebRequest *request) {
+void rBootHttpUpdate::setBaseRequest(HttpRequest *request) {
 	baseRequest = request;
 }
 
@@ -81,13 +81,13 @@ void rBootHttpUpdate::start() {
 		rBootHttpUpdateItem &it = items[i];
 		debugf("Download file:\r\n    (%d) %s -> %X", currentItem, it.url.c_str(), it.targetOffset);
 
-		WebRequest *request;
+		HttpRequest *request;
 		if(baseRequest != NULL) {
 			request = baseRequest->clone();
 			request->setURL(URL(it.url));
 		}
 		else {
-			request = new WebRequest(URL(it.url));
+			request = new HttpRequest(URL(it.url));
 		}
 
 		request->setMethod(HTTP_GET);

@@ -10,6 +10,7 @@
 
 #ifdef ENABLE_SSL
 #include "../../axtls-8266/compat/lwipr_compat.h"
+#include "../Clock.h"
 #endif
 
 #include "../Wiring/WiringFrameworkDependencies.h"
@@ -64,9 +65,12 @@ struct pbuf;
 class String;
 class IDataSourceStream;
 class IPAddress;
+class TcpServer;
 
 class TcpConnection
 {
+	friend class TcpServer;
+
 public:
 	TcpConnection(bool autoDestruct);
 	TcpConnection(tcp_pcb* connection, bool autoDestruct);

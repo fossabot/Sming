@@ -19,7 +19,7 @@ void onIndex(HttpRequest &request, HttpResponse &response)
 void onConfiguration(HttpRequest &request, HttpResponse &response)
 {
 	MeteoConfig cfg = loadConfig();
-	if (request.getRequestMethod() == RequestMethod::POST)
+	if (request.method == HTTP_POST)
 	{
 		debugf("Update config");
 		// Update config
@@ -42,7 +42,7 @@ void onConfiguration(HttpRequest &request, HttpResponse &response)
 		}
 		saveConfig(cfg);
 		startWebClock(); // Apply time zone settings
-		response.redirect();
+		response.redirect("/");
 	}
 
 	debugf("Send template");

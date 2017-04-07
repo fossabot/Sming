@@ -9,70 +9,52 @@
 #define _SMING_CORE_HTTPSERVER_H_
 
 #include "TcpServer.h"
-#include "WebSocket.h"
-#include "../../Wiring/WHashMap.h"
-#include "../../Wiring/WVector.h"
+#include "../Wiring/WString.h"
+#include "../Wiring/WHashMap.h"
 #include "../Delegate.h"
-#include "../../Services/CommandProcessing/CommandProcessingIncludes.h"
-
-class String;
-class HttpServerConnection;
-class HttpRequest;
-class HttpResponse;
-
-typedef Vector<WebSocket> WebSocketsList;
+#include "Http/HttpResponse.h"
+#include "Http/HttpRequest.h"
+#include "Http/HttpResource.h"
+#include "Http/HttpServerConnection.h"
 
 typedef Delegate<void(HttpRequest&, HttpResponse&)> HttpPathDelegate;
-typedef Delegate<void(WebSocket&)> WebSocketDelegate;
-typedef Delegate<void(WebSocket&, const String&)> WebSocketMessageDelegate;
-typedef Delegate<void(WebSocket&, uint8_t* data, size_t size)> WebSocketBinaryDelegate;
+typedef Delegate<int(HttpServerConnection&, HttpRequest&, HttpResponse&)> HttpResourceDelegate;
+
+typedef struct {
+	int maxActiveConnections = 10; // << the maximum number of concurrent requests..
+	int keepAliveSeconds = 5; // << the default seconds to keep the connection alive before closing it
+} HttpServerSettings;
+
 
 class HttpServer: public TcpServer
 {
 	friend class HttpServerConnection;
+
 public:
 	HttpServer();
+	HttpServer(HttpServerSettings settings);
 	virtual ~HttpServer();
 
-	void enableHeaderProcessing(String headerName);
-	bool isHeaderProcessingEnabled(String name);
+	/*
+	 * @brief Allows changing the server configuration
+	 */
+	void configure(HttpServerSettings settings);
 
 	void addPath(String path, HttpPathDelegate callback);
 	void setDefaultHandler(HttpPathDelegate callback);
 
-	/// Web Sockets
-	void enableWebSockets(bool enabled);
-	void commandProcessing(bool enabled, String reqReqestParam);
-	__forceinline WebSocketsList& getActiveWebSockets() { return wsocks; }
-	void setWebSocketConnectionHandler(WebSocketDelegate handler);
-	void setWebSocketMessageHandler(WebSocketMessageDelegate handler);
-	void setWebSocketBinaryHandler(WebSocketBinaryDelegate handler);
-	void setWebSocketDisconnectionHandler(WebSocketDelegate handler);
+	void addPath(const String& path, HttpResourceDelegate onRequestComplete);
+
+	void addPath(const String& path, const HttpResource& resource);
+	void setDefaultResource(const HttpResource& resource);
 
 protected:
 	virtual TcpConnection* createClient(tcp_pcb *clientTcp);
-	virtual bool initWebSocket(HttpServerConnection &connection, HttpRequest &request, HttpResponse &response);
-	virtual bool processRequest(HttpServerConnection &connection, HttpRequest &request, HttpResponse &response);
-	virtual void processWebSocketFrame(pbuf *buf, HttpServerConnection &connection);
-
-	WebSocket* getWebSocket(HttpServerConnection &connection);
-	void removeWebSocket(HttpServerConnection &connection);
-	void onCloseWebSocket(HttpServerConnection &connection);
+	virtual void onConnectionClose(TcpClient& connection, bool success);
 
 private:
-	HttpPathDelegate defaultHandler;
-	Vector<String> processingHeaders;
-	HashMap<String, HttpPathDelegate> paths;
-	WebSocketsList wsocks;
-
-	bool wsEnabled = false;
-	WebSocketDelegate wsConnect;
-	WebSocketMessageDelegate wsMessage;
-	WebSocketBinaryDelegate wsBinary;
-	WebSocketDelegate wsDisconnect;
-
-	bool wsCommandEnabled = false;
-	String wsCommandRequestParam;
+	HttpServerSettings settings;
+	ResourceTree resourceTree;
 };
 
 #endif /* _SMING_CORE_HTTPSERVER_H_ */

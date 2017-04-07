@@ -13,10 +13,6 @@
 #include "../Wiring/WString.h"
 #include "../Wiring/IPAddress.h"
 
-#ifdef ENABLE_SSL
-#include "../Clock.h"
-#endif
-
 TcpConnection::TcpConnection(bool autoDestruct) : autoSelfDestruct(autoDestruct), sleep(0), canSend(true), timeOut(70)
 {
 

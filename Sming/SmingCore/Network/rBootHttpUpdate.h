@@ -11,8 +11,8 @@
 #include <Timer.h>
 
 #include <rboot-api.h>
-#include "WebClient.h"
 #include "../OutputStream.h"
+#include "HttpClient.h"
 
 #define NO_ROM_SWITCH 0xff
 
@@ -58,9 +58,9 @@ public:
 	 * - default SSL fingeprints
 	 * - default SSL client certificates
 	 *
-	 * @param WebRequest *
+	 * @param HttpRequest *
 	 */
-	void setBaseRequest(WebRequest *request);
+	void setBaseRequest(HttpRequest *request);
 
 	// Allow reading items
 	rBootHttpUpdateItem getItem(unsigned int index);
@@ -81,7 +81,7 @@ protected:
 	uint8_t romSlot;
 	OtaUpdateDelegate updateDelegate;
 
-	WebRequest* baseRequest = NULL;
+	HttpRequest* baseRequest = NULL;
 };
 
 #endif /* SMINGCORE_NETWORK_RBOOTHTTPUPDATE_H_ */

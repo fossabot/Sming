@@ -152,7 +152,7 @@ TARGET		= app
 CUSTOM_TARGETS ?=
 
 # which modules (subdirectories) of the project to include in compiling
-MODULES		= system system/helpers Wiring SmingCore appinit $(filter %/, $(wildcard SmingCore/*/)) $(filter %/, $(wildcard Services/*/)) $(filter %/, $(wildcard Libraries/*/))
+MODULES		= system system/helpers Wiring appinit $(shell find SmingCore -type d) $(filter %/, $(wildcard Services/*/)) $(filter %/, $(wildcard Libraries/*/))
 EXTRA_INCDIR    = include system/include Wiring Libraries SmingCore $(SDK_BASE)/../include
 
 # Place a file that should exist in a submodule that is fetched separately
@@ -169,6 +169,11 @@ EXTRA_INCDIR     += third-party/spiffs/src
 THIRD_PARTY_DATA += third-party/http-parser/Makefile
 MODULES		     += third-party/http-parser/
 EXTRA_INCDIR     += third-party/http-parser/
+
+# => webscoket-parser
+THIRD_PARTY_DATA += third-party/ws_parser/Makefile
+MODULES              += third-party/ws_parser/
+EXTRA_INCDIR     += third-party/ws_parser/
 
 # => esp-gdbstub
 ifeq ($(ENABLE_GDB), 1)

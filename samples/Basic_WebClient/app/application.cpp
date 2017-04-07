@@ -10,7 +10,7 @@
 #include <user_config.h>
 #include <SmingCore/SmingCore.h>
 
-#include "Network/WebClient.h"
+#include "Network/HttpClient.h"
 
 // If you want, you can define WiFi settings globally in Eclipse Environment Variables
 #ifndef WIFI_SSID
@@ -111,7 +111,7 @@ void connectOk(IPAddress ip, IPAddress mask, IPAddress gateway)
 	 * 		   and all consecutive requests to the same host:port will try to reuse those settings
 	 */
 
-	Headers requestHeaders;
+	HttpHeaders requestHeaders;
 	requestHeaders["User-Agent"] = "WebClient/Sming";
 
 	downloadClient.send(

@@ -6,9 +6,6 @@
  ****/
 
 #include "../SmingCore/DataSourceStream.h"
-#include "../SmingCore/Network/TcpConnection.h"
-#include "../SmingCore/Network/HttpRequest.h"
-#include "WiringFrameworkDependencies.h"
 
 MemoryDataStream::MemoryDataStream()
 {
@@ -306,13 +303,14 @@ void TemplateFileStream::setVar(String name, String value)
 	templateData[name] = value;
 }
 
-void TemplateFileStream::setVarsFromRequest(const HttpRequest& request)
-{
-	if (request.requestGetParameters != NULL)
-		templateData.setMultiple(*request.requestGetParameters);
-	if (request.requestPostParameters != NULL)
-		templateData.setMultiple(*request.requestPostParameters);
-}
+// TODO: Remove that dependency from here ...
+//void TemplateFileStream::setVarsFromRequest(const HttpRequest& request)
+//{
+//	if (request.requestGetParameters != NULL)
+//		templateData.setMultiple(*request.requestGetParameters);
+//	if (request.requestPostParameters != NULL)
+//		templateData.setMultiple(*request.requestPostParameters);
+//}
 
 ///////////////////////////////////////////////////////////////////////////
 

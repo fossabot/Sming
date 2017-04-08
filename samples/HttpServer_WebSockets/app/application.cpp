@@ -44,7 +44,7 @@ void wsConnected(WebSocketConnection& socket)
 	//Use a global instance and add this new connection. Normally
 	userGeorge.addSession(socket);
 	// Notify everybody about new connection
-	WebSocketsList &clients = server.getActiveWebSockets();
+	WebSocketsList &clients = socket.getActiveWebSockets();
 	for (int i = 0; i < clients.count(); i++)
 		clients[i].sendString("New friend arrived! Total: " + String(totalActiveSockets));
 }
@@ -80,7 +80,7 @@ void wsDisconnected(WebSocketConnection& socket)
     }
 
 	// Notify everybody about lost connection
-	WebSocketsList &clients = server.getActiveWebSockets();
+	WebSocketsList &clients = socket.getActiveWebSockets();
 	for (int i = 0; i < clients.count(); i++)
 		clients[i].sendString("We lost our friend :( Total: " + String(totalActiveSockets));
 }

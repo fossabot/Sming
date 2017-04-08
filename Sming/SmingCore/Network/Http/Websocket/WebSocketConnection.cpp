@@ -10,6 +10,8 @@
 #include "../../Services/WebHelpers/base64.h"
 //#include "../../Services/CommandProcessing/CommandExecutor.h"
 
+WebSocketsList WebSocketConnection::websocketList;
+
 WebSocketConnection::WebSocketConnection(HttpServerConnection* conn)
 {
 	connection = conn;
@@ -43,6 +45,9 @@ bool WebSocketConnection::initialize(HttpRequest& request, HttpResponse& respons
 	response.setHeader("Connection", "Upgrade");
 	response.setHeader("Upgrade", "websocket");
 	response.setHeader("Sec-WebSocket-Accept", secure);
+
+	websocketList.addElement(*this);
+
 	return true;
 }
 
@@ -75,8 +80,20 @@ void WebSocketConnection::sendBinary(const uint8_t* data, int size)
 //#endif
 //}
 
+bool  WebSocketConnection::operator==(const WebSocketConnection &rhs) const
+{
+	return (this == &rhs);
+}
+
+WebSocketsList& WebSocketConnection::getActiveWebSockets()
+{
+	return websocketList;
+}
+
 void WebSocketConnection::close()
 {
+	websocketList.removeElement((const WebSocketConnection)*this);
+
 	connection->close();
 }
 

@@ -24,6 +24,7 @@ class HttpServerConnection;
 
 typedef Delegate<int(HttpServerConnection& connection, HttpRequest&, const char *at, int length)> HttpServerConnectionBodyDelegate;
 typedef Delegate<int(HttpServerConnection&, HttpRequest&, HttpResponse&)> HttpResourceDelegate;
+typedef Delegate<void(HttpRequest&, HttpResponse&)> HttpPathDelegate; // << deprecated
 
 class HttpResource {
 public:
@@ -34,6 +35,18 @@ public:
 	HttpResourceDelegate onHeadersComplete = 0;
 	HttpResourceDelegate onRequestComplete = 0;
 };
+
+class HttpCompatResource: public HttpResource {
+public:
+	HttpCompatResource(HttpPathDelegate callback);
+
+private:
+	int requestComplete(HttpServerConnection&, HttpRequest& , HttpResponse& );
+
+private:
+	HttpPathDelegate callback;
+};
+
 
 typedef HashMap<String, HttpResource> ResourceTree;
 

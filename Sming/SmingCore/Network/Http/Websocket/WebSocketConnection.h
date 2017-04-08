@@ -15,6 +15,10 @@
 
 //class CommandExecutor; // TODO: ...
 
+class WebSocketConnection;
+
+typedef Vector<WebSocketConnection> WebSocketsList;
+
 class WebSocketConnection
 {
 public:
@@ -32,12 +36,23 @@ public:
 	void setUserData(void* userData);
 	void* getUserData();
 
+// @deprecated
+	bool operator==(const WebSocketConnection &rhs) const;
+
+	WebSocketsList& getActiveWebSockets();
+// @end deprecated
+
 protected:
 	bool is(HttpServerConnection* conn) { return connection == conn; };
 
 private:
 	void *userData = nullptr;
 	HttpServerConnection* connection = nullptr;
+
+// @deprecated
+	static WebSocketsList websocketList;
+// @end deprecated
+
 //	CommandExecutor* commandExecutor = nullptr; // TODO: ...
 };
 

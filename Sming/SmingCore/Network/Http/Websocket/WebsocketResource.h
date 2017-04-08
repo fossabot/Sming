@@ -49,7 +49,7 @@ protected:
 protected:
 	WebSocketConnection *sock = NULL;
 
-	ws_frame_type_t frameType;
+	ws_frame_type_t frameType = WS_FRAME_TEXT;
 
 	ws_parser_t parser;
 	ws_parser_callbacks_t parserSettings;

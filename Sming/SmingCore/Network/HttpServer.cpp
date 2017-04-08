@@ -24,6 +24,9 @@ HttpServer::HttpServer(HttpServerSettings settings)
 void HttpServer::configure(HttpServerSettings settings) {
 	this->settings = settings;
 	setTimeOut(settings.keepAliveSeconds);
+#ifdef ENABLE_SSL
+	sslSessionCacheSize = settings.sslSessionCacheSize;
+#endif
 }
 
 HttpServer::~HttpServer()
@@ -50,9 +53,7 @@ void HttpServer::addPath(String path, HttpPathDelegate callback)
 		path = "/" + path;
 	debugf("'%s' registered", path.c_str());
 
-	HttpResource resource;
-//	wrapCallback(resource, callback); // TODO: ...
-
+	HttpCompatResource resource(callback);
 	resourceTree[path] = resource;
 }
 
@@ -66,7 +67,6 @@ void HttpServer::addPath(const String& path, HttpResourceDelegate onRequestCompl
 	resource.onRequestComplete = onRequestComplete;
 	resourceTree[path] = resource;
 }
-
 
 void HttpServer::addPath(const String& path, const HttpResource& resource) {
 	resourceTree[path] = resource;

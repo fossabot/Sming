@@ -17,14 +17,13 @@
 #include "Http/HttpResource.h"
 #include "Http/HttpServerConnection.h"
 
-typedef Delegate<void(HttpRequest&, HttpResponse&)> HttpPathDelegate;
-typedef Delegate<int(HttpServerConnection&, HttpRequest&, HttpResponse&)> HttpResourceDelegate;
-
 typedef struct {
 	int maxActiveConnections = 10; // << the maximum number of concurrent requests..
 	int keepAliveSeconds = 5; // << the default seconds to keep the connection alive before closing it
+#ifdef ENABLE_SSL
+	int sslSessionCacheSize = 10; // << number of SSL session ids to cache. Setting this to 0 will disable SSL session resumption.
+#endif
 } HttpServerSettings;
-
 
 class HttpServer: public TcpServer
 {

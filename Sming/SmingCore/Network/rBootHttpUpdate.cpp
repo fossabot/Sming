@@ -15,7 +15,7 @@ void rBootItemOutputStream::setItem(rBootHttpUpdateItem* item) {
 }
 
 bool rBootItemOutputStream::init() {
-	if(item != NULL) {
+	if(item == NULL) {
 		debugf("rBootItemOutputStream: Item must be set!");
 		return false;
 	}

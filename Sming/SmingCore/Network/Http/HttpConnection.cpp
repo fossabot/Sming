@@ -143,7 +143,7 @@ int HttpConnection::staticOnMessageBegin(http_parser* parser)
 		return 1; // there are no requests in the queue
 	}
 
-	if(connection->currentRequest->outputStream != NULL) {
+	if(connection->currentRequest->responseStream != NULL) {
 		connection->mode = eHCM_Stream;
 	}
 	else {
@@ -187,9 +187,9 @@ int HttpConnection::staticOnMessageComplete(http_parser* parser)
 		return (connection->executionQueue.enqueue(connection->currentRequest)? 0: -1);
 	}
 
-	if(connection->currentRequest->outputStream != NULL) {
-		connection->currentRequest->outputStream->close();
-		delete connection->currentRequest->outputStream;
+	if(connection->currentRequest->responseStream != NULL) {
+		connection->currentRequest->responseStream->close();
+		delete connection->currentRequest->responseStream;
 	}
 
 	delete connection->currentRequest;
@@ -302,10 +302,10 @@ int HttpConnection::staticOnBody(http_parser *parser, const char *at, size_t len
 		return 0;
 	}
 
-	if(connection->currentRequest->outputStream != NULL) {
-		int res = connection->currentRequest->outputStream->write((const uint8_t *)&at, length);
+	if(connection->currentRequest->responseStream != NULL) {
+		int res = connection->currentRequest->responseStream->write((const uint8_t *)&at, length);
 		if (res != length) {
-			connection->currentRequest->outputStream->close();
+			connection->currentRequest->responseStream->close();
 			return 1;
 		}
 	}

@@ -128,9 +128,9 @@ int HttpServerConnection::staticOnMessageComplete(http_parser* parser)
 
 	// TODO: Improve the error handling here...
 
-	if(connection->request.outputStream != NULL) {
-		connection->request.outputStream->close();
-		delete connection->request.outputStream;
+	if(connection->request.responseStream != NULL) {
+		connection->request.responseStream->close();
+		delete connection->request.responseStream;
 	}
 
 	return hasError;

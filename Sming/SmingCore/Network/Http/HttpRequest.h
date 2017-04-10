@@ -132,7 +132,8 @@ protected:
 	uint8_t *rawData = NULL;
 	size_t rawDataLength = 0;
 	IDataSourceStream *stream = NULL;
-	IOutputStream *outputStream = NULL;
+
+	IOutputStream *responseStream = NULL;
 
 #ifdef ENABLE_HTTP_REQUEST_AUTH
 	AuthAdapter *auth = NULL;

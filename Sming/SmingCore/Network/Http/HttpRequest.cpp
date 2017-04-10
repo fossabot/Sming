@@ -132,7 +132,7 @@ String HttpRequest::getBody()
 }
 
 HttpRequest* HttpRequest::setResponseStream(IOutputStream *stream) {
-	outputStream = stream;
+	responseStream = stream;
 	return this;
 }
 

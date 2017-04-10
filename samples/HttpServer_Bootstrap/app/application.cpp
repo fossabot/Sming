@@ -29,7 +29,7 @@ void onIndex(HttpRequest &request, HttpResponse &response)
 
 void onHello(HttpRequest &request, HttpResponse &response)
 {
-	response.setContentType(ContentType::HTML);
+	response.setContentType(MIME_HTML);
 	// Use direct strings output only for small amount of data (huge memory allocation)
 	response.sendString("Sming. Let's do smart things.");
 }

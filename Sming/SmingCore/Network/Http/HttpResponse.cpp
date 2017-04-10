@@ -18,6 +18,11 @@ HttpResponse* HttpResponse::setContentType(const String type)
 	return setHeader("Content-Type", type);
 }
 
+HttpResponse* HttpResponse::setContentType(enum MimeType type)
+{
+	return setContentType(ContentType::toString(type));
+}
+
 HttpResponse* HttpResponse::setCookie(const String name, const String value)
 {
 	return setHeader("Set-Cookie", name + "=" + value);
@@ -144,7 +149,7 @@ bool HttpResponse::sendJsonObject(JsonObjectStream* newJsonStreamInstance)
 
 	stream = newJsonStreamInstance;
 	if (!hasHeader("Content-Type")) {
-		setContentType(ContentType::JSON);
+		setContentType(MIME_JSON);
 	}
 
 	return true;

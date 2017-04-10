@@ -38,6 +38,7 @@ public:
 	}
 
 	HttpResponse* setContentType(const String type);
+	HttpResponse* setContentType(enum MimeType type);
 	HttpResponse* setCookie(const String name, const String value);
 	HttpResponse* setHeader(const String name, const String value);
 	HttpResponse* setCache(int maxAgeSeconds = 3600, bool isPublic = false);

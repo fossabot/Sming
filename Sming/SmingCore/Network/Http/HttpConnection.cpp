@@ -400,6 +400,10 @@ void HttpConnection::send(HttpRequest* request) {
 		request->requestHeaders["Transfer-Encoding"] = "chunked";
 	}
 
+	if(request->postParams.count() && !request->requestHeaders.contains("Content-Type")) {
+		request->requestHeaders["Content-Type"] = MIME_FORM_URL_ENCODED;
+	}
+
 	for (int i = 0; i < request->requestHeaders.count(); i++)
 	{
 		String write = request->requestHeaders.keyAt(i) + ": " + request->requestHeaders.valueAt(i) + "\r\n";

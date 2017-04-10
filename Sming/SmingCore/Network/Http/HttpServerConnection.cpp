@@ -369,7 +369,7 @@ void HttpServerConnection::sendError(const char* message /* = NULL*/, enum http_
 {
 	debugf("SEND ERROR PAGE");
 	response.code = code;
-	response.headers["Content-Type"] = ContentType::HTML;
+	response.headers["Content-Type"] = MIME_HTML;
 
 	String html = "<H2 color='#444'>";
 	html += message ? message :  getStatus((enum http_status)response.code);

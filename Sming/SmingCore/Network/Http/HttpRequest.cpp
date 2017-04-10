@@ -59,7 +59,8 @@ HttpRequest* HttpRequest::setURL(URL uri) {
 	return this;
 }
 
-HttpRequest* HttpRequest::setMethod(const HttpMethod method) {
+HttpRequest* HttpRequest::setMethod(const HttpMethod method)
+{
 	this->method = method;
 	return this;
 }
@@ -73,6 +74,19 @@ HttpRequest* HttpRequest::setHeaders(const HttpHeaders& headers) {
 
 HttpRequest* HttpRequest::setHeader(const String& name, const String& value) {
 	this->requestHeaders[name] = value; // TODO: add here name and/or value escaping.
+	return this;
+}
+
+
+HttpRequest* HttpRequest::setPostParameters(const HttpParams& params)
+{
+	postParams = params;
+	return this;
+}
+
+HttpRequest* HttpRequest::setPostParameter(const String& name, const String& value)
+{
+	postParams[name] = value;
 	return this;
 }
 

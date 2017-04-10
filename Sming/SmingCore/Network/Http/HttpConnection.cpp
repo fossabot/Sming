@@ -12,6 +12,8 @@
 
 #include "HttpConnection.h"
 
+#include "../../Services/WebHelpers/escape.h"
+
 #ifdef __LINUX__
 // TODO: check if this is ESP
 #include "lwip/priv/tcp_priv.h"
@@ -417,12 +419,21 @@ void HttpConnection::send(HttpRequest* request) {
 	if(request->rawDataLength > 0) {
 		TcpClient::send((const char*)request->rawData, (uint16_t)request->rawDataLength);
 	}
-	if(request->stream != NULL) {
+	else if(request->stream != NULL) {
 		send(request->stream);
 
 		debugf("Stream completed");
 		delete request->stream;
 		request->stream = NULL;
+	}
+	else if (request->postParams.count())  {
+		for(int i = 0; i < request->postParams.count(); i++) {
+			// TODO: prevent memory fragmentation ...
+			char *dest = uri_escape(NULL, 0, request->postParams.valueAt(i).c_str(), request->postParams.valueAt(i).length());
+			String write = request->postParams.keyAt(i) + "=" + String(dest) + "&";
+			sendString(write.c_str());
+			free(dest);
+		}
 	}
 	else if(request->bodyAsString.length()) {
 		sendString(request->bodyAsString);

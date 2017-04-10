@@ -49,6 +49,10 @@ public:
 
 	HttpRequest* setHeader(const String& name, const String& value);
 
+	HttpRequest* setPostParameters(const HttpParams& params);
+	HttpRequest* setPostParameter(const String& name, const String& value);
+
+
 #ifdef ENABLE_HTTP_REQUEST_AUTH
 	// Authentication adapters set here
 	HttpRequest* setAuth(AuthAdapter *adapter);

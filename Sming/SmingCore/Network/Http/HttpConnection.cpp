@@ -381,22 +381,23 @@ err_t HttpConnection::onConnected(err_t err) {
 void HttpConnection::send(HttpRequest* request) {
 	sendString(http_method_str(request->method) + String(" ") + request->uri.getPathWithQuery() + " HTTP/1.1\r\nHost: " + request->uri.Host + "\r\n");
 
-	// take care to adjust the content-length
+	// Adjust the content-length
+	request->requestHeaders["Content-Length"] = "0";
 	if(request->rawDataLength) {
 		request->requestHeaders["Content-Length"] = String(request->rawDataLength);
 	}
 	else if(request->bodyAsString.length()) {
 		request->requestHeaders["Content-Length"] = String(request->bodyAsString.length());
 	}
-	else if (request->stream != NULL ) {
-		// TODO:: if the stream has a size -> use it otherwise use chunked encoding
-		if(request->requestHeaders.contains("Content-Length")) {
-			request->requestHeaders.remove("Content-Length");
-		}
-		request->requestHeaders["Transfer-Encoding"] = "chunked";
+	else if(request->postParams.count()) {
+		// TODO:: (Nice to have) calculate the content length
 	}
-	else {
-		request->requestHeaders["Content-Length"] = "0";
+	else if (request->stream != NULL && request->stream->length() > -1) {
+		request->requestHeaders["Content-Length"] = String(request->stream->length());
+	}
+
+	if(!request->requestHeaders.contains("Content-Length")) {
+		request->requestHeaders["Transfer-Encoding"] = "chunked";
 	}
 
 	for (int i = 0; i < request->requestHeaders.count(); i++)
@@ -405,6 +406,8 @@ void HttpConnection::send(HttpRequest* request) {
 		sendString(write.c_str());
 	}
 	sendString("\r\n");
+
+	// Send content
 
 	// if there is input raw data -> send it
 	if(request->rawDataLength > 0) {

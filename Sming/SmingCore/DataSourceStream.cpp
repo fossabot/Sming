@@ -338,3 +338,12 @@ uint16_t JsonObjectStream::readMemoryBlock(char* data, int bufSize)
 
 	return MemoryDataStream::readMemoryBlock(data, bufSize);
 }
+
+int JsonObjectStream::length()
+{
+	if (rootNode != JsonObject::invalid()) {
+		return -1;
+	}
+
+	return rootNode.measureLength();
+}

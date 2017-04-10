@@ -14,8 +14,7 @@
 
 #include "../../Services/WebHelpers/escape.h"
 
-#ifdef __LINUX__
-// TODO: check if this is ESP
+#ifdef __linux__
 #include "lwip/priv/tcp_priv.h"
 #else
 #include "lwip/tcp_impl.h"
@@ -388,15 +387,12 @@ void HttpConnection::send(HttpRequest* request) {
 	if(request->rawDataLength) {
 		request->requestHeaders["Content-Length"] = String(request->rawDataLength);
 	}
-	else if(request->bodyAsString.length()) {
-		request->requestHeaders["Content-Length"] = String(request->bodyAsString.length());
-	}
-	else if(request->postParams.count()) {
-		// TODO:: (Nice to have) calculate the content length
-	}
 	else if (request->stream != NULL && request->stream->length() > -1) {
 		request->requestHeaders["Content-Length"] = String(request->stream->length());
 	}
+
+	// TODO: represent the post params as stream ...
+
 
 	if(!request->requestHeaders.contains("Content-Length")) {
 		request->requestHeaders["Transfer-Encoding"] = "chunked";
@@ -426,6 +422,10 @@ void HttpConnection::send(HttpRequest* request) {
 		delete request->stream;
 		request->stream = NULL;
 	}
+#if 0
+
+	// Post Params should be also stream...
+
 	else if (request->postParams.count())  {
 		for(int i = 0; i < request->postParams.count(); i++) {
 			// TODO: prevent memory fragmentation ...
@@ -435,9 +435,7 @@ void HttpConnection::send(HttpRequest* request) {
 			free(dest);
 		}
 	}
-	else if(request->bodyAsString.length()) {
-		sendString(request->bodyAsString);
-	}
+#endif
 }
 
 HttpRequest* HttpConnection::getRequest() {
@@ -452,7 +450,18 @@ HttpResponse* HttpConnection::getResponse() {
 //	if(currentRequest) {
 //		response->stream = currentRequest->outputStream;
 //	}
-	response->bodyAsString = responseStringData;
+
+	if(responseStringData.length()) {
+		if(response->stream != NULL) {
+			delete response->stream;
+			response->stream = NULL;
+		}
+
+		MemoryDataStream* memory = new MemoryDataStream();
+		memory->write((uint8_t *)responseStringData.c_str(), responseStringData.length());
+		response->stream = (IDataSourceStream* )memory;
+	}
+	return response;
 }
 
 // end of public methods for HttpConnection

@@ -74,7 +74,7 @@ void onConfiguration_json(HttpRequest &request, HttpResponse &response)
 	json["StaPassword"] = ActiveConfig.StaPassword;
 	json["StaEnable"] = ActiveConfig.StaEnable;
 
-	response.sendJsonObject(stream);
+	response.sendDataStream(stream, MIME_JSON);
 }
 void onFile(HttpRequest &request, HttpResponse &response)
 {
@@ -98,7 +98,7 @@ void onAJAXGetState(HttpRequest &request, HttpResponse &response)
 
 	json["counter"] = counter;
 
-	response.sendJsonObject(stream);
+	response.sendDataStream(stream, MIME_JSON);
 }
 
 

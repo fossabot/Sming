@@ -27,7 +27,6 @@ HttpRequest::HttpRequest(const HttpRequest& value) {
 	requestBodyDelegate = value.requestBodyDelegate;
 	requestCompletedDelegate = value.requestCompletedDelegate;
 
-	bodyAsString = value.bodyAsString;
 	rawData = value.rawData;
 	rawDataLength = value.rawDataLength;
 
@@ -128,7 +127,28 @@ String HttpRequest::getQueryParameter(String parameterName, String defaultValue 
 
 String HttpRequest::getBody()
 {
-	return bodyAsString;
+	if(stream == NULL) {
+		return "";
+	}
+
+	String ret;
+	if(stream->length() != -1 && stream->getStreamType() == eSST_Memory) {
+		MemoryDataStream *memory = (MemoryDataStream *)stream;
+		char buf[1024];
+		for(int i=0; i< stream->length(); i += 1024) {
+			int available = memory->readMemoryBlock(buf, 1024);
+			ret += String(buf, available);
+			if(available < 1024) {
+				break;
+			}
+		}
+	}
+	return ret;
+}
+
+IDataSourceStream* HttpRequest::getBodyStream()
+{
+	return stream;
 }
 
 HttpRequest* HttpRequest::setResponseStream(IOutputStream *stream) {
@@ -159,7 +179,18 @@ HttpRequest* HttpRequest::setSslClientKeyCert(SSLKeyCertPair clientKeyCert) {
 #endif
 
 HttpRequest* HttpRequest::setBody(const String& body) {
-	bodyAsString = body;
+	if(stream != NULL) {
+		debugf("HttpRequest::setBody: Discarding already set stream!");
+		delete stream;
+		stream = NULL;
+	}
+
+	MemoryDataStream *memory = new MemoryDataStream();
+	int written = memory->write((uint8_t *)body.c_str(), body.length());
+	if(written < body.length()) {
+		debugf("HttpRequest::setBody: Unable to store the complete body");
+	}
+	stream = (IDataSourceStream*)memory;
 	return this;
 }
 

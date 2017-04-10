@@ -37,10 +37,6 @@ bool HttpClient::send(HttpRequest* request) {
 		httpConnectionPool[cacheKey] = new HttpConnection(queue[cacheKey]);
 	}
 
-	// if that is old httpConnection object from another httpClient -> reuse it and add the new queue.
-	// TODO: check if that is working as expected...
-//	httpConnectionPool[cacheKey]->waitingQueue = queue[cacheKey];
-
 #ifdef ENABLE_SSL
 	// Based on the URL decide if we should reuse the SSL and TCP pool
 	if(useSsl) {
@@ -122,8 +118,6 @@ HttpRequest* HttpClient::request(const String& url) {
 
 HashMap<String, HttpConnection *> HttpClient::httpConnectionPool;
 HashMap<String, RequestQueue* > HttpClient::queue;
-
-// TODO:: Free connection pool
 
 #ifdef ENABLE_SSL
 HashMap<String, SSLSessionId* > HttpClient::sslSessionIdPool;

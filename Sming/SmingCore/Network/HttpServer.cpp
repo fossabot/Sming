@@ -23,6 +23,9 @@ HttpServer::HttpServer(HttpServerSettings settings)
 
 void HttpServer::configure(HttpServerSettings settings) {
 	this->settings = settings;
+	if(settings.minHeapSize != -1 && settings.minHeapSize > -1) {
+		minHeapSize = settings.minHeapSize;
+	}
 	setTimeOut(settings.keepAliveSeconds);
 #ifdef ENABLE_SSL
 	sslSessionCacheSize = settings.sslSessionCacheSize;

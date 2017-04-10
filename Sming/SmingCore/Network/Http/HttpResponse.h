@@ -17,7 +17,7 @@
 #include "../../OutputStream.h"
 #include "../../DataSourceStream.h"
 
-class JsonObjectStream; // TODO: fix this later...
+class JsonObjectStream; // << TODO: deprecated and should be removed in the next version
 
 class HttpResponse {
 	friend class HttpClient;
@@ -47,21 +47,31 @@ public:
 	// Send file by name
 	bool sendFile(String fileName, bool allowGzipFileCheck = true);
 
+	// @deprecated
+
 	// Parse and send template file
 	bool sendTemplate(TemplateFileStream* newTemplateInstance);
 
-	// Build and send JSON string
+	/**
+	 * brief Build and send JSON string
+	 *
+	 * @deprecated use response.sendDataStream(stream, MIME_JSON) instead
+	 */
 	bool sendJsonObject(JsonObjectStream* newJsonStreamInstance);
-	// Send Datastream, can be called with Classes derived from
-	bool sendDataStream( IDataSourceStream * newDataStream , String reqContentType = "" );
 
 	// @end deprecated
 
+	// Send Datastream, can be called with Classes derived from
+	bool sendDataStream( IDataSourceStream * newDataStream , enum MimeType type) {
+		return sendDataStream(newDataStream, ContentType::toString(type));
+	}
+
+	// Send Datastream, can be called with Classes derived from
+	bool sendDataStream( IDataSourceStream * newDataStream , String reqContentType = "" );
 
 public:
 	int code;
 	HttpHeaders headers;
-	String bodyAsString;
 	IDataSourceStream* stream = NULL;
 };
 

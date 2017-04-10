@@ -69,9 +69,22 @@ public:
 
 	String getQueryParameter(String parameterName, String defaultValue = "");
 
+	/**
+	 * @brief Returns content from the body stream as string.
+	 * @retval String
+	 *
+	 * @note This method consumes the stream and it will work only with text data.
+	 * 		 If you have binary data in the stream use getBodyStream instead.
+	 */
 	String getBody();
 
 // @end deprecated
+
+	/**
+	 * @brief Returns pointer to the current body stream
+	 * @retval IDataSourceStream*
+	 */
+	IDataSourceStream* getBodyStream();
 
 #ifdef ENABLE_SSL
  	HttpRequest* setSslOptions(uint32_t sslOptions);
@@ -128,7 +141,6 @@ protected:
 	RequestBodyDelegate requestBodyDelegate;
 	RequestCompletedDelegate requestCompletedDelegate;
 
-	String bodyAsString;
 	uint8_t *rawData = NULL;
 	size_t rawDataLength = 0;
 	IDataSourceStream *stream = NULL;

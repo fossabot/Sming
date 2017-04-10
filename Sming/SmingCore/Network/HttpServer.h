@@ -20,6 +20,8 @@
 typedef struct {
 	int maxActiveConnections = 10; // << the maximum number of concurrent requests..
 	int keepAliveSeconds = 5; // << the default seconds to keep the connection alive before closing it
+	int minHeapSize = -1; // << defines the min heap size that is required to accept connection.
+					      //  -1 - means use server default
 #ifdef ENABLE_SSL
 	int sslSessionCacheSize = 10; // << number of SSL session ids to cache. Setting this to 0 will disable SSL session resumption.
 #endif
@@ -50,6 +52,11 @@ public:
 protected:
 	virtual TcpConnection* createClient(tcp_pcb *clientTcp);
 	virtual void onConnectionClose(TcpClient& connection, bool success);
+
+protected:
+#ifdef ENABLE_SSL
+	int minHeapSize = 16384;
+#endif
 
 private:
 	HttpServerSettings settings;

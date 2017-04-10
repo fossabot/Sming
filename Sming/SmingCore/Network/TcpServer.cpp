@@ -140,9 +140,8 @@ bool TcpServer::listen(int port, bool useSsl /*= false */)
 
 err_t TcpServer::onAccept(tcp_pcb *clientTcp, err_t err)
 {
-	// TODO: add configurable heap size check...
 	// Anti DDoS :-)
-	if (system_get_free_heap_size() < 6500)
+	if (system_get_free_heap_size() < minHeapSize)
 	{
 		debugf("\r\n\r\nCONNECTION DROPPED\r\n\t(%d)\r\n\r\n", system_get_free_heap_size());
 		return ERR_MEM;

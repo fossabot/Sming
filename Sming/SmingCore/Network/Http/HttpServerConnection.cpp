@@ -242,9 +242,9 @@ err_t HttpServerConnection::onReceive(pbuf *buf)
 	}
 
 	pbuf *cur = buf;
-	if (parser->upgrade) {
+	if (parser->upgrade && resource.onUpgrade) {
 		while (cur != NULL && cur->len > 0) {
-			int err = resource.onBody(*this, request, (char*)cur->payload, cur->len);
+			int err = resource.onUpgrade(*this, request, (char*)cur->payload, cur->len);
 			if(err) {
 				debugf("The upgraded connection returned error: %d", err);
 				TcpConnection::onReceive(NULL);
@@ -286,19 +286,20 @@ err_t HttpServerConnection::onReceive(pbuf *buf)
 			return ERR_ABRT; // abort the c
 		}
 
-		// process the rest of the bytes
-		while (cur != NULL && cur->len > 0) {
-			int err = resource.onBody(*this, request, (char*)cur->payload, cur->len);
-			if(err) {
-				debugf("The upgraded connection returned error: %d", err);
-				TcpConnection::onReceive(NULL);
-				return ERR_ABRT; // abort the connection
-			}
+		if(resource.onUpgrade) {
+			// we have rest bytes -> process them
+			while (cur != NULL && cur->len > 0) {
+				int err = resource.onUpgrade(*this, request, (char*)cur->payload, cur->len);
+				if(err) {
+					debugf("The upgraded connection returned error: %d", err);
+					TcpConnection::onReceive(NULL);
+					return ERR_ABRT; // abort the connection
+				}
 
-			cur = cur->next;
+				cur = cur->next;
+			}
 		}
 	}
-
 
 	// Fire ReadyToSend callback
 	TcpConnection::onReceive(buf);

@@ -12,7 +12,7 @@
 
 WebsocketResource::WebsocketResource() {
 	onHeadersComplete = HttpResourceDelegate(&WebsocketResource::checkHeaders, this);
-	onBody = HttpServerConnectionBodyDelegate(&WebsocketResource::processWebSocketFrame, this);
+	onUpgrade = HttpServerConnectionUpgradeDelegate(&WebsocketResource::processWebSocketFrame, this);
 }
 
 WebsocketResource::~WebsocketResource() {
@@ -50,7 +50,7 @@ int WebsocketResource::checkHeaders(HttpServerConnection& connection, HttpReques
 	return 0;
 }
 
-int WebsocketResource::processWebSocketFrame(HttpServerConnection& connection, HttpRequest& request, const char *at, int size) {
+int WebsocketResource::processWebSocketFrame(HttpServerConnection& connection, HttpRequest& request, char *at, int size) {
 	int rc = ws_parser_execute(&parser, (char *)at, size);
 	if (rc != WS_OK) {
 		debugf("WebSocketResource error: %d %s\n", rc, ws_parser_error(rc));

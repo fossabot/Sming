@@ -29,7 +29,7 @@ public:
 	WebsocketResource();
 	~WebsocketResource();
 	int checkHeaders(HttpServerConnection& connection, HttpRequest& request, HttpResponse& response);
-	int processWebSocketFrame(HttpServerConnection& connection, HttpRequest& request, const char *at, int size);
+	int processWebSocketFrame(HttpServerConnection& connection, HttpRequest& request, char *at, int size);
 
 	void setConnectionHandler(WebSocketDelegate handler);
 

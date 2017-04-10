@@ -23,6 +23,7 @@
 class HttpServerConnection;
 
 typedef Delegate<int(HttpServerConnection& connection, HttpRequest&, const char *at, int length)> HttpServerConnectionBodyDelegate;
+typedef Delegate<int(HttpServerConnection& connection, HttpRequest&, char *at, int length)> HttpServerConnectionUpgradeDelegate;
 typedef Delegate<int(HttpServerConnection&, HttpRequest&, HttpResponse&)> HttpResourceDelegate;
 typedef Delegate<void(HttpRequest&, HttpResponse&)> HttpPathDelegate; // << deprecated
 
@@ -31,9 +32,10 @@ public:
 	virtual ~HttpResource() {}
 
 public:
-	HttpServerConnectionBodyDelegate onBody = 0;
-	HttpResourceDelegate onHeadersComplete = 0;
-	HttpResourceDelegate onRequestComplete = 0;
+	HttpServerConnectionBodyDelegate onBody = 0; // << called when the resource wants to process the raw body data
+	HttpResourceDelegate onHeadersComplete = 0; // << called when the headers are ready
+	HttpResourceDelegate onRequestComplete = 0; // << called when the request is complete OR upgraded
+	HttpServerConnectionUpgradeDelegate onUpgrade = 0; // called when the request is upgraded and raw data is passed to it
 };
 
 class HttpCompatResource: public HttpResource {

@@ -40,7 +40,7 @@ public:
 
 class HttpCompatResource: public HttpResource {
 public:
-	HttpCompatResource(HttpPathDelegate callback);
+	HttpCompatResource(const HttpPathDelegate& callback);
 
 private:
 	int requestComplete(HttpServerConnection&, HttpRequest& , HttpResponse& );
@@ -50,6 +50,6 @@ private:
 };
 
 
-typedef HashMap<String, HttpResource> ResourceTree;
+typedef HashMap<String, HttpResource*> ResourceTree;
 
 #endif /* _SMING_CORE_HTTP_RESOURCE_H_ */

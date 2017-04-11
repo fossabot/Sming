@@ -10,7 +10,7 @@
 
 #include "../HttpResource.h"
 #include "WebSocketConnection.h"
-
+#include "../../Wiring/WString.h"
 extern "C" {
 	#include "../ws_parser/ws_parser.h"
 }
@@ -32,9 +32,7 @@ public:
 	int processWebSocketFrame(HttpServerConnection& connection, HttpRequest& request, char *at, int size);
 
 	void setConnectionHandler(WebSocketDelegate handler);
-
 	void setMessageHandler(WebSocketMessageDelegate handler);
-
 	void setBinaryHandler(WebSocketBinaryDelegate handler);
 	void setDisconnectionHandler(WebSocketDelegate handler);
 
@@ -54,10 +52,10 @@ protected:
 	ws_parser_t parser;
 	ws_parser_callbacks_t parserSettings;
 
-	WebSocketDelegate wsConnect;
-	WebSocketMessageDelegate wsMessage;
-	WebSocketBinaryDelegate wsBinary;
-	WebSocketDelegate wsDisconnect;
+	WebSocketDelegate wsConnect = 0;
+	WebSocketMessageDelegate wsMessage = 0;
+	WebSocketBinaryDelegate wsBinary = 0;
+	WebSocketDelegate wsDisconnect = 0;
 };
 
 #endif /* _SMING_SMINGCORE_NETWORK_WEBSOCKET_RESOURCE_H_ */

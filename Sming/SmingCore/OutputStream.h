@@ -26,7 +26,7 @@ public:
 class FileOutputStream: public IOutputStream
 {
 public:
-	FileOutputStream(String filename, FileOpenFlags flags = eFO_WriteOnly);
+	FileOutputStream(String filename, FileOpenFlags flags = eFO_CreateIfNotExist);
 
 	virtual size_t write(const uint8_t* data, size_t size);
 

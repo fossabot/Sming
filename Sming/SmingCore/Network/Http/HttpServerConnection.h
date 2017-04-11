@@ -24,16 +24,6 @@
 #define HTTP_SERVER_EXPOSE_DATE 0
 #endif
 
-enum HttpConnectionState // TODO: Check if we need this at all
-{
-	eHCS_Ready,
-	eHCS_ParsePostData,
-	eHCS_ParsingCompleted,
-	eHCS_Sending,
-	eHCS_WebSocketFrames,
-	eHCS_Sent
-};
-
 class HttpServerConnection;
 
 typedef Delegate<void(HttpServerConnection& connection)> HttpServerConnectionDelegate;
@@ -75,7 +65,7 @@ private:
 
 	ResourceTree* resourceTree = NULL;
 
-	HttpResource resource;
+	HttpResource* resource = NULL;
 	HttpRequest request = HttpRequest(URL());
 	HttpResponse response;
 	bool headersSent = false;

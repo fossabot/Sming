@@ -79,7 +79,7 @@ bool HttpClient::downloadFile(const String& url, const String& saveFileName, Req
 	else
 		file = saveFileName;
 
-	FileOutputStream* fileStream = new FileOutputStream(saveFileName);
+	FileOutputStream* fileStream = new FileOutputStream(file);
 
 	return send(request(url)
 				   ->setResponseStream(fileStream)
@@ -89,28 +89,6 @@ bool HttpClient::downloadFile(const String& url, const String& saveFileName, Req
 }
 
 // @enddeprecated
-
-// HttpConnection ...
-
-bool HttpConnection::send(IDataSourceStream* inputStream, bool forceCloseAfterSent /* = false*/)
-{
-	do {
-		int len = 256;
-		char data[len];
-		len = inputStream->readMemoryBlock(data, len);
-
-		// send the data in chunks...
-		sendString(String(len)+ "\r\n");
-		TcpClient::send(data, len);
-		sendString("\n\r");
-		inputStream->seek(max(len, 0));
-	} while(!inputStream->isFinished());
-
-	sendString("0\r\n\r\n", forceCloseAfterSent);
-
-	return true;
-}
-
 
 HttpRequest* HttpClient::request(const String& url) {
 	return new HttpRequest(URL(url));

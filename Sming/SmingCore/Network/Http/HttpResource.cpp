@@ -12,8 +12,9 @@
 
 #include "HttpResource.h"
 
-HttpCompatResource::HttpCompatResource(HttpPathDelegate callback)
+HttpCompatResource::HttpCompatResource(const HttpPathDelegate& callback)
 {
+	this->callback = callback;
 	onRequestComplete = HttpResourceDelegate(&HttpCompatResource::requestComplete, this);
 }
 

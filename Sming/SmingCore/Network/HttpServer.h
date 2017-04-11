@@ -41,13 +41,18 @@ public:
 	 */
 	void configure(HttpServerSettings settings);
 
-	void addPath(String path, HttpPathDelegate callback);
-	void setDefaultHandler(HttpPathDelegate callback);
+	/**
+	 * @param String path URL path.
+	 * @note Path should start with slash. Trailing slashes will be removed.
+	 * @param HttpPathDelegate callback - the callback that will handle this path
+	 */
+	void addPath(String path, const HttpPathDelegate& callback);
+	void addPath(const String& path, const HttpResourceDelegate& onRequestComplete);
+	void addPath(const String& path, HttpResource* resource);
 
-	void addPath(const String& path, HttpResourceDelegate onRequestComplete);
+	void setDefaultHandler(const HttpPathDelegate& callback);
+	void setDefaultResource(HttpResource* resource);
 
-	void addPath(const String& path, const HttpResource& resource);
-	void setDefaultResource(const HttpResource& resource);
 
 protected:
 	virtual TcpConnection* createClient(tcp_pcb *clientTcp);

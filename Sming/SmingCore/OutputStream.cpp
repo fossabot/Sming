@@ -1,15 +1,13 @@
 /****
  * Sming Framework Project - Open Source framework for high efficiency native ESP8266 development.
  * Created 2015 by Skurydin Alexey
- *
- * Authors: 2017-... Slavey Karadzhov <slav@attachix.com>
- *
+ * http://github.com/anakod/Sming
  * All files of the Sming Core are provided under the LGPL v3 license.
  ****/
 
 #include "OutputStream.h"
 
-FileOutputStream::FileOutputStream(String fileName, FileOpenFlags flags /* = eFO_WriteOnly */) {
+FileOutputStream::FileOutputStream(String fileName, FileOpenFlags flags /* = eFO_CreateIfNotExist */) {
 	handle = fileOpen(fileName, flags);
 }
 
@@ -27,11 +25,11 @@ bool FileOutputStream::close() {
 	}
 
 	fileClose(handle);
+	handle = 0;
 	return true;
 }
 
 FileOutputStream::~FileOutputStream()
 {
 	close();
-	handle = 0;
 }

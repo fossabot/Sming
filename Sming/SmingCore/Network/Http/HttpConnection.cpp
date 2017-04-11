@@ -330,6 +330,7 @@ err_t HttpConnection::onConnected(err_t err) {
 			http_parser_init(parser, HTTP_RESPONSE);
 			parser->data = (void*)this;
 
+			memset(&parserSettings, 0, sizeof(parserSettings));
 			// Notification callbacks: on_message_begin, on_headers_complete, on_message_complete.
 			parserSettings.on_message_begin     = staticOnMessageBegin;
 			parserSettings.on_headers_complete  = staticOnHeadersComplete;
@@ -438,6 +439,40 @@ void HttpConnection::send(HttpRequest* request) {
 #endif
 }
 
+bool HttpConnection::send(IDataSourceStream* inputStream, bool forceCloseAfterSent /* = false*/)
+{
+	if(inputStream->length() != -1) {
+		// send the data as one big blob
+		do {
+			int len = 256;
+			char data[len];
+			len = inputStream->readMemoryBlock(data, len);
+			TcpClient::send(data, len);
+			inputStream->seek(max(len, 0));
+		} while(!inputStream->isFinished());
+
+		return true;
+	}
+
+	// Send the data in chunked-encoding
+
+	do {
+		int len = 256;
+		char data[len];
+		len = inputStream->readMemoryBlock(data, len);
+
+		// send the data in chunks...
+		sendString(String(len)+ "\r\n");
+		TcpClient::send(data, len);
+		sendString("\n\r");
+		inputStream->seek(max(len, 0));
+	} while(!inputStream->isFinished());
+
+	sendString("0\r\n\r\n", forceCloseAfterSent);
+
+	return true;
+}
+
 HttpRequest* HttpConnection::getRequest() {
 	return currentRequest;
 }
@@ -480,16 +515,9 @@ err_t HttpConnection::onReceive(pbuf *buf) {
 		if(HTTP_PARSER_ERRNO(parser) != HPE_OK) {
 			// we ran into trouble - abort the connection
 			debugf("HTTP parser error: %s", http_errno_name(HTTP_PARSER_ERRNO(parser)));
-			reset();
-
-			if(HTTP_PARSER_ERRNO(parser) >= HPE_INVALID_EOF_STATE) {
-				cleanup();
-				TcpConnection::onReceive(NULL);
-				return ERR_ABRT; // abort the connection on HTTP parsing error.
-			}
-
-			TcpClient::onReceive(buf);
-			return ERR_OK;
+			cleanup();
+			TcpConnection::onReceive(NULL);
+			return ERR_ABRT;
 		}
 
 		cur = cur->next;

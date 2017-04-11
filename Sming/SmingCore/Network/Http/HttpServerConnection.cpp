@@ -85,16 +85,18 @@ int HttpServerConnection::staticOnPath(http_parser *parser, const char *at, size
 	// TODO: find the most suitable path..
 
 	String path = String(at, length);
-	// if there is query string -> remove it for now
-
-
 	if (path.length() > 1 && path.endsWith("/")) {
 		path = path.substring(0, path.length() - 1);
 	}
 
 	connection->request.setURL(path);
 
-	// TODO: ...
+	if(connection->resourceTree == NULL) {
+		debugf("WARNING: HttpServerConnection: The resource tree is not set!");
+
+		return -1;
+	}
+
 	if (connection->resourceTree->contains(connection->request.uri.Path)) {
 		connection->resource = (*connection->resourceTree)[connection->request.uri.Path];
 	}
@@ -120,8 +122,8 @@ int HttpServerConnection::staticOnMessageComplete(http_parser* parser)
 		return 0;
 	}
 
-	if(connection->resource.onRequestComplete) {
-		hasError = connection->resource.onRequestComplete(*connection, connection->request, connection->response);
+	if(connection->resource != NULL && connection->resource->onRequestComplete) {
+		hasError = connection->resource->onRequestComplete(*connection, connection->request, connection->response);
 	}
 
 	connection->send();
@@ -163,8 +165,8 @@ int HttpServerConnection::staticOnHeadersComplete(http_parser* parser)
 	int error = 0;
 	connection->request.setHeaders(connection->requestHeaders);
 
-	if(connection->resource.onHeadersComplete) {
-		error = connection->resource.onHeadersComplete(*connection, connection->request, connection->response);
+	if(connection->resource != NULL && connection->resource->onHeadersComplete) {
+		error = connection->resource->onHeadersComplete(*connection, connection->request, connection->response);
 	}
 
 	if(!error && connection->request.method == HTTP_HEAD) {
@@ -218,8 +220,8 @@ int HttpServerConnection::staticOnBody(http_parser *parser, const char *at, size
 		return -1;
 	}
 
-	if(connection->resource.onBody) {
-		return connection->resource.onBody(*connection, connection->request, at, length);
+	if(connection->resource != NULL && connection->resource->onBody) {
+		return connection->resource->onBody(*connection, connection->request, at, length);
 	}
 
 	// TODO: ...
@@ -242,9 +244,9 @@ err_t HttpServerConnection::onReceive(pbuf *buf)
 	}
 
 	pbuf *cur = buf;
-	if (parser->upgrade && resource.onUpgrade) {
+	if (parser->upgrade && resource != NULL && resource->onUpgrade) {
 		while (cur != NULL && cur->len > 0) {
-			int err = resource.onUpgrade(*this, request, (char*)cur->payload, cur->len);
+			int err = resource->onUpgrade(*this, request, (char*)cur->payload, cur->len);
 			if(err) {
 				debugf("The upgraded connection returned error: %d", err);
 				TcpConnection::onReceive(NULL);
@@ -286,10 +288,10 @@ err_t HttpServerConnection::onReceive(pbuf *buf)
 			return ERR_ABRT; // abort the c
 		}
 
-		if(resource.onUpgrade) {
+		if(resource != NULL && resource->onUpgrade) {
 			// we have rest bytes -> process them
 			while (cur != NULL && cur->len > 0) {
-				int err = resource.onUpgrade(*this, request, (char*)cur->payload, cur->len);
+				int err = resource->onUpgrade(*this, request, (char*)cur->payload, cur->len);
 				if(err) {
 					debugf("The upgraded connection returned error: %d", err);
 					TcpConnection::onReceive(NULL);
@@ -332,6 +334,9 @@ void HttpServerConnection::send()
 		String statusLine = "HTTP/1.1 "+String(response.code) +  " " + getStatus((enum http_status)response.code) + "\r\n";
 		sendString(statusLine);
 
+		if(response.stream != NULL && response.stream->length() != -1) {
+			response.headers["Content-Length"] = String(response.stream->length());
+		}
 		if(!response.headers.contains("Content-Length") && response.stream == NULL) {
 			response.headers["Content-Length"] = "0";
 		}
@@ -369,7 +374,7 @@ void HttpServerConnection::sendError(const char* message /* = NULL*/, enum http_
 {
 	debugf("SEND ERROR PAGE");
 	response.code = code;
-	response.headers["Content-Type"] = MIME_HTML;
+	response.setContentType(MIME_HTML);
 
 	String html = "<H2 color='#444'>";
 	html += message ? message :  getStatus((enum http_status)response.code);

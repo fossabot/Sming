@@ -81,10 +81,14 @@ bool TcpClient::send(IDataSourceStream* inputStream, bool forceCloseAfterSent /*
 	do {
 		int len = 256;
 		char data[len];
-		len = inputStream->readMemoryBlock(data, len);
-		inputStream->seek(max(len, 0));
+		int available = inputStream->readMemoryBlock(data, len);
+		if(!available) {
+			break;
+		}
 
-		send(data, len, (inputStream->isFinished() ? asyncCloseAfterSent: false));
+		inputStream->seek(max(available, 0));
+
+		send(data, available, (inputStream->isFinished() ? asyncCloseAfterSent: false));
 
 	} while(!inputStream->isFinished());
 

@@ -77,11 +77,10 @@ void WebsocketResource::setDisconnectionHandler(WebSocketDelegate handler) {
 }
 
 int WebsocketResource::staticOnDataBegin(void* userData, ws_frame_type_t type) {
-	if (userData == NULL) {
+	WebsocketResource *resource = (WebsocketResource *)userData;
+	if (resource == NULL) {
 		return -1;
 	}
-
-	WebsocketResource *resource = (WebsocketResource *)userData;
 
 	resource->frameType = type;
 
@@ -94,11 +93,10 @@ int WebsocketResource::staticOnDataBegin(void* userData, ws_frame_type_t type) {
 }
 
 int WebsocketResource::staticOnDataPayload(void* userData, const char *at, size_t length) {
-	if (userData == NULL) {
+	WebsocketResource *resource = (WebsocketResource *)userData;
+	if (resource == NULL) {
 		return -1;
 	}
-
-	WebsocketResource *resource = (WebsocketResource *)userData;
 
 	if (resource->frameType == WS_FRAME_TEXT && resource->wsMessage) {
 		resource->wsMessage(*resource->sock, String(at, length));

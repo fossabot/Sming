@@ -92,11 +92,11 @@ void startWebServer()
 	server.setDefaultHandler(onFile);
 
 	// Web Sockets configuration
-	WebsocketResource wsResource;
-	wsResource.setConnectionHandler(wsConnected);
-	wsResource.setMessageHandler(wsMessageReceived);
-	wsResource.setBinaryHandler(wsBinaryReceived);
-	wsResource.setDisconnectionHandler(wsDisconnected);
+	WebsocketResource* wsResource=new WebsocketResource();
+	wsResource->setConnectionHandler(wsConnected);
+	wsResource->setMessageHandler(wsMessageReceived);
+	wsResource->setBinaryHandler(wsBinaryReceived);
+	wsResource->setDisconnectionHandler(wsDisconnected);
 
 	server.addPath("/ws", wsResource);
 

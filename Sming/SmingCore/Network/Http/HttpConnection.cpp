@@ -302,7 +302,7 @@ int HttpConnection::staticOnBody(http_parser *parser, const char *at, size_t len
 	}
 
 	if(connection->currentRequest->responseStream != NULL) {
-		int res = connection->currentRequest->responseStream->write((const uint8_t *)&at, length);
+		int res = connection->currentRequest->responseStream->write((const uint8_t *)at, length);
 		if (res != length) {
 			connection->currentRequest->responseStream->close();
 			return 1;

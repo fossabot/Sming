@@ -7,7 +7,7 @@
 
 #include "OutputStream.h"
 
-FileOutputStream::FileOutputStream(String fileName, FileOpenFlags flags /* = eFO_CreateIfNotExist */) {
+FileOutputStream::FileOutputStream(String fileName, FileOpenFlags flags /* = eFO_CreateNewAlways | eFO_WriteOnly */) {
 	handle = fileOpen(fileName, flags);
 }
 

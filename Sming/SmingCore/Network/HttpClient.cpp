@@ -27,8 +27,12 @@ bool HttpClient::send(HttpRequest* request) {
 	}
 
 	if(httpConnectionPool.contains(cacheKey) &&
-	   !(httpConnectionPool[cacheKey]->getConnectionState() == eTCS_Ready || httpConnectionPool[cacheKey]->isActive())
+	   httpConnectionPool[cacheKey]->getConnectionState() > eTCS_Connecting &&
+	   !httpConnectionPool[cacheKey]->isActive()
 	) {
+
+		debugf("Removing stale connection: State: %d, Active: %d", (int)httpConnectionPool[cacheKey]->getConnectionState(),
+										(httpConnectionPool[cacheKey]->isActive() ? 1: 0));
 		httpConnectionPool.remove(cacheKey);
 	}
 

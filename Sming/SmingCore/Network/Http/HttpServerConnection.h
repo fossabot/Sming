@@ -28,6 +28,13 @@ class HttpServerConnection;
 
 typedef Delegate<void(HttpServerConnection& connection)> HttpServerConnectionDelegate;
 
+enum HttpConnectionState
+{
+	eHCS_Ready,
+	eHCS_Sending,
+	eHCS_Sent
+};
+
 class HttpServerConnection: public TcpClient
 {
 public:
@@ -60,14 +67,17 @@ private:
 	static int IRAM_ATTR staticOnMessageComplete(http_parser* parser);
 
 private:
-	http_parser *parser = NULL;
+	HttpConnectionState state;
+
+	http_parser parser;
 	http_parser_settings parserSettings;
 
 	ResourceTree* resourceTree = NULL;
-
 	HttpResource* resource = NULL;
+
 	HttpRequest request = HttpRequest(URL());
 	HttpResponse response;
+
 	bool headersSent = false;
 
 	HttpResourceDelegate headersCompleteDelegate = 0;

@@ -13,45 +13,32 @@
 #include "WebConstants.h"
 
 HttpServerConnection::HttpServerConnection(tcp_pcb *clientTcp)
-	: TcpClient(clientTcp, 0, 0)
+	: TcpClient(clientTcp, 0, 0), state(eHCS_Ready)
 {
 	// create parser ...
-	if(parser == NULL) {
-		parser = new http_parser;
-		http_parser_init(parser, HTTP_REQUEST);
-		parser->data = (void*)this;
+	http_parser_init(&parser, HTTP_REQUEST);
+	parser.data = (void*)this;
 
-		memset(&parserSettings, 0, sizeof(parserSettings));
+	memset(&parserSettings, 0, sizeof(parserSettings));
+	// Notification callbacks: on_message_begin, on_headers_complete, on_message_complete.
+	parserSettings.on_message_begin     = staticOnMessageBegin;
+	parserSettings.on_headers_complete  = staticOnHeadersComplete;
+	parserSettings.on_message_complete  = staticOnMessageComplete;
 
-		// Notification callbacks: on_message_begin, on_headers_complete, on_message_complete.
-		parserSettings.on_message_begin     = staticOnMessageBegin;
-		parserSettings.on_headers_complete  = staticOnHeadersComplete;
-		parserSettings.on_message_complete  = staticOnMessageComplete;
-
-		// Data callbacks: on_url, (common) on_header_field, on_header_value, on_body;
-		parserSettings.on_url               = staticOnPath;
-		parserSettings.on_header_field      = staticOnHeaderField;
-		parserSettings.on_header_value      = staticOnHeaderValue;
-		parserSettings.on_body              = staticOnBody;
-	}
+	// Data callbacks: on_url, (common) on_header_field, on_header_value, on_body;
+	parserSettings.on_url               = staticOnPath;
+	parserSettings.on_header_field      = staticOnHeaderField;
+	parserSettings.on_header_value      = staticOnHeaderValue;
+	parserSettings.on_body              = staticOnBody;
 }
 
 HttpServerConnection::~HttpServerConnection()
 {
-	if(parser != NULL) {
-		delete parser;
-	}
 }
 
 void HttpServerConnection::setResourceTree(ResourceTree* resourceTree) {
 	this->resourceTree = resourceTree;
 }
-
-//err_t HttpServerConnection::onProtocolUpgrade(http_parser* parser)
-//{
-//	debugf("onProtocolUpgrade: Protocol upgrade is not supported");
-//	return ERR_ABRT;
-//}
 
 int HttpServerConnection::staticOnMessageBegin(http_parser* parser)
 {
@@ -244,7 +231,7 @@ err_t HttpServerConnection::onReceive(pbuf *buf)
 	}
 
 	pbuf *cur = buf;
-	if (parser->upgrade && resource != NULL && resource->onUpgrade) {
+	if (parser.upgrade && resource != NULL && resource->onUpgrade) {
 		while (cur != NULL && cur->len > 0) {
 			int err = resource->onUpgrade(*this, request, (char*)cur->payload, cur->len);
 			if(err) {
@@ -263,13 +250,13 @@ err_t HttpServerConnection::onReceive(pbuf *buf)
 
 	int parsedBytes = 0;
 	while (cur != NULL && cur->len > 0) {
-		parsedBytes += http_parser_execute(parser, &parserSettings, (char*) cur->payload, cur->len);
-		if(HTTP_PARSER_ERRNO(parser) != HPE_OK) {
+		parsedBytes += http_parser_execute(&parser, &parserSettings, (char*) cur->payload, cur->len);
+		if(HTTP_PARSER_ERRNO(&parser) != HPE_OK) {
 			// we ran into trouble - abort the connection
-			debugf("HTTP parser error: %s", http_errno_name(HTTP_PARSER_ERRNO(parser)));
+			debugf("HTTP parser error: %s", http_errno_name(HTTP_PARSER_ERRNO(&parser)));
 			sendError();
 
-			if(HTTP_PARSER_ERRNO(parser) >= HPE_INVALID_EOF_STATE) {
+			if(HTTP_PARSER_ERRNO(&parser) >= HPE_INVALID_EOF_STATE) {
 				TcpConnection::onReceive(NULL);
 				return ERR_ABRT; // abort the connection on HTTP parsing error.
 			}
@@ -282,7 +269,7 @@ err_t HttpServerConnection::onReceive(pbuf *buf)
 	}
 
 	if (parsedBytes != buf->tot_len) {
-		if(!parser->upgrade) {
+		if(!parser.upgrade) {
 			// something went wrong
 			TcpConnection::onReceive(NULL);
 			return ERR_ABRT; // abort the c
@@ -309,30 +296,15 @@ err_t HttpServerConnection::onReceive(pbuf *buf)
 	return ERR_OK;
 }
 
-void HttpServerConnection::onReadyToSendData(TcpConnectionEvent sourceEvent) {
-	TcpClient::onReadyToSendData(sourceEvent);
-}
-
-void HttpServerConnection::onError(err_t err) {
-	TcpClient::onError(err);
-}
-
-
-const char * HttpServerConnection::getStatus(enum http_status code)
+void HttpServerConnection::onReadyToSendData(TcpConnectionEvent sourceEvent)
 {
-  switch (code) {
-#define XX(num, name, string) case num : return #string;
-      HTTP_STATUS_MAP(XX)
-#undef XX
-      default: return "<unknown>";
-  }
-}
+	if(state != eHCS_Sending) {
+		return;
+	}
 
-void HttpServerConnection::send()
-{
 	if(!headersSent) {
 		String statusLine = "HTTP/1.1 "+String(response.code) +  " " + getStatus((enum http_status)response.code) + "\r\n";
-		sendString(statusLine);
+		writeString(statusLine, TCP_WRITE_FLAG_MORE | TCP_WRITE_FLAG_COPY);
 
 		if(response.stream != NULL && response.stream->length() != -1) {
 			response.headers["Content-Length"] = String(response.stream->length());
@@ -352,22 +324,46 @@ void HttpServerConnection::send()
 #if HTTP_SERVER_EXPOSE_DATE == 1
 		response.headers["Date"] = SystemClock.getSystemTimeString();
 #endif
-
-		// TODO: If we have streams with length then we can update the stream data
-		// response.headers["Content-Length"] = "123...";
-
 		for (int i = 0; i < response.headers.count(); i++)
 		{
 			String write = response.headers.keyAt(i) + ": " + response.headers.valueAt(i) + "\r\n";
-			sendString(write.c_str());
+			writeString(write.c_str(), TCP_WRITE_FLAG_MORE | TCP_WRITE_FLAG_COPY);
 		}
-		sendString("\r\n");
+		writeString("\r\n", TCP_WRITE_FLAG_MORE | TCP_WRITE_FLAG_COPY);
 		headersSent = true;
 	}
 
-	if(response.stream != NULL) {
-		send(response.stream);
+	if(response.stream == NULL) {
+		state = eHCS_Sent;
+		return;
 	}
+
+	write(response.stream);
+	if (response.stream->isFinished()) {
+		debugf("Body stream completed");
+		delete response.stream; // Free memory now!
+		response.stream = NULL;
+		state = eHCS_Sent;
+	}
+}
+
+void HttpServerConnection::onError(err_t err) {
+	TcpClient::onError(err);
+}
+
+const char * HttpServerConnection::getStatus(enum http_status code)
+{
+  switch (code) {
+#define XX(num, name, string) case num : return #string;
+      HTTP_STATUS_MAP(XX)
+#undef XX
+      default: return "<unknown>";
+  }
+}
+
+void HttpServerConnection::send()
+{
+	state = eHCS_Sending;
 }
 
 void HttpServerConnection::sendError(const char* message /* = NULL*/, enum http_status code /* = HTTP_STATUS_BAD_REQUEST */)

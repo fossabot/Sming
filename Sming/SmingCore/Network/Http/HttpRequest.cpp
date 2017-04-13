@@ -50,7 +50,9 @@ HttpRequest& HttpRequest::operator = (const HttpRequest& rhs) {
 }
 
 HttpRequest::~HttpRequest() {
-
+	if(queryParams != NULL) {
+		delete queryParams;
+	}
 }
 
 HttpRequest* HttpRequest::setURL(URL uri) {
@@ -113,13 +115,30 @@ String HttpRequest::getPostParameter(const String& name) {
 	return postParams[name];
 }
 
-String HttpRequest::getQueryParameter(String parameterName, String defaultValue /* = "" */)
+String HttpRequest::getQueryParameter(const String& parameterName, const String& defaultValue /* = "" */)
 {
-	String query = uri.Query;
+	if(queryParams == NULL) {
+		queryParams = new HttpParams();
+		if(!uri.Query.length()) {
+			return defaultValue;
+		}
 
-	// TODO: split the query string and process the values...
-	if(queryParams.contains(parameterName)) {
-		return queryParams[parameterName];
+		String query = uri.Query.substring(1);
+		Vector<String> parts;
+		splitString(query, '&' , parts);
+		for(int i=0; i < parts.count(); i++) {
+			Vector<String> pair;
+			int count = splitString(parts[i], '=' , pair);
+			if(count != 2) {
+				debugf("getQueryParameter: Missing = in query string: %s", parts[i]);
+				continue;
+			}
+			(*queryParams)[pair.at(0)] = pair.at(1); // TODO: name and value URI decoding...
+		}
+	}
+
+	if(queryParams->contains(parameterName)) {
+		return (*queryParams)[parameterName];
 	}
 
 	return defaultValue;

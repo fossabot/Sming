@@ -67,7 +67,7 @@ public:
 		return uri.Path;
 	}
 
-	String getQueryParameter(String parameterName, String defaultValue = "");
+	String getQueryParameter(const String& parameterName, const String& defaultValue = "");
 
 	/**
 	 * @brief Returns content from the body stream as string.
@@ -158,7 +158,7 @@ protected:
 #endif
 
 private:
-	HttpParams queryParams; // << deprecated
+	HttpParams* queryParams = NULL; // << deprecated
 };
 
 #endif /* _SMING_CORE_HTTP_REQUEST_H_ */

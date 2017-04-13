@@ -314,7 +314,13 @@ void HttpServerConnection::onReadyToSendData(TcpConnectionEvent sourceEvent)
 		}
 
 		if(!response.headers.contains("Connection")) {
-			response.headers["Connection"] = "keep-alive"; // Keep-Alive to reuse the connection
+			if(request.requestHeaders.contains("Connection") && request.requestHeaders["Connection"] == "close") {
+				// the other side requests closing of the tcp connection...
+				response.headers["Connection"] = "close";
+			}
+			else {
+				response.headers["Connection"] = "keep-alive"; // Keep-Alive to reuse the connection
+			}
 		}
 
 #if HTTP_SERVER_EXPOSE_NAME == 1
@@ -333,17 +339,28 @@ void HttpServerConnection::onReadyToSendData(TcpConnectionEvent sourceEvent)
 		headersSent = true;
 	}
 
-	if(response.stream == NULL) {
-		state = eHCS_Sent;
-		return;
-	}
+	do {
+		if(request.method == HTTP_HEAD) {
+			state = eHCS_Sent;
+			break;
+		}
 
-	write(response.stream);
-	if (response.stream->isFinished()) {
-		debugf("Body stream completed");
-		delete response.stream; // Free memory now!
-		response.stream = NULL;
-		state = eHCS_Sent;
+		if(response.stream == NULL) {
+			state = eHCS_Sent;
+			break;
+		}
+
+		write(response.stream);
+		if (response.stream->isFinished()) {
+			debugf("Body stream completed");
+			delete response.stream; // Free memory now!
+			response.stream = NULL;
+			state = eHCS_Sent;
+		}
+	} while(false);
+
+	if(state == eHCS_Sent && response.headers["Connection"] == "close") {
+		setTimeOut(1); // decrease the timeout to 1 tick
 	}
 }
 

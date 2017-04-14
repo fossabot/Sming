@@ -25,6 +25,7 @@ class HttpResponse {
 	friend class HttpServerConnection;
 
 public:
+	~HttpResponse();
 
 	bool sendString(const String& text);
 

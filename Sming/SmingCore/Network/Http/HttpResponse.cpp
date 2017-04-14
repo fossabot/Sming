@@ -13,6 +13,14 @@
 #include "HttpResponse.h"
 #include "../WebConstants.h"
 
+HttpResponse::~HttpResponse()
+{
+	if(stream != NULL) {
+		delete stream;
+		stream = NULL;
+	}
+}
+
 HttpResponse* HttpResponse::setContentType(const String type)
 {
 	return setHeader("Content-Type", type);

@@ -51,6 +51,13 @@ int HttpServerConnection::staticOnMessageBegin(http_parser* parser)
 	// Reset Response ...
 	connection->response.code = 200;
 	connection->response.headers.clear();
+	if(connection->response.stream != NULL) {
+		delete connection->response.stream;
+		connection->response.stream = NULL;
+	}
+
+	connection->headersSent = false;
+	connection->state = eHCS_Ready;
 
 	// ... and Request
 	// TODO:
@@ -341,6 +348,10 @@ void HttpServerConnection::onReadyToSendData(TcpConnectionEvent sourceEvent)
 
 	do {
 		if(request.method == HTTP_HEAD) {
+			if(response.stream != NULL) {
+				delete response.stream;
+				response.stream = NULL;
+			}
 			state = eHCS_Sent;
 			break;
 		}

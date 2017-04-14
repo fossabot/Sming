@@ -34,6 +34,11 @@ void HttpServer::configure(HttpServerSettings settings) {
 
 HttpServer::~HttpServer()
 {
+	for(int i=0; i< resourceTree.count(); i++) {
+		if(resourceTree.valueAt(i) != NULL) {
+			delete resourceTree.valueAt(i);
+		}
+	}
 }
 
 TcpConnection* HttpServer::createClient(tcp_pcb *clientTcp)

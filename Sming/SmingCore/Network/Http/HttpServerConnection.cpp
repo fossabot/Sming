@@ -306,6 +306,7 @@ err_t HttpServerConnection::onReceive(pbuf *buf)
 void HttpServerConnection::onReadyToSendData(TcpConnectionEvent sourceEvent)
 {
 	if(state != eHCS_Sending) {
+		TcpClient::onReadyToSendData(sourceEvent);
 		return;
 	}
 
@@ -373,6 +374,8 @@ void HttpServerConnection::onReadyToSendData(TcpConnectionEvent sourceEvent)
 	if(state == eHCS_Sent && response.headers["Connection"] == "close") {
 		setTimeOut(1); // decrease the timeout to 1 tick
 	}
+
+	TcpClient::onReadyToSendData(sourceEvent);
 }
 
 void HttpServerConnection::onError(err_t err) {

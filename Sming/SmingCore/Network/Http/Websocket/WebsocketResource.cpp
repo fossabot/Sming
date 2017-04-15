@@ -12,52 +12,41 @@
 
 WebsocketResource::WebsocketResource() {
 	onHeadersComplete = HttpResourceDelegate(&WebsocketResource::checkHeaders, this);
-	onUpgrade = HttpServerConnectionUpgradeDelegate(&WebsocketResource::processWebSocketFrame, this);
+	onUpgrade = HttpServerConnectionUpgradeDelegate(&WebsocketResource::processData, this);
 }
 
-WebsocketResource::~WebsocketResource() {
-	if (sock != NULL) {
-		delete sock;
-	}
+WebsocketResource::~WebsocketResource()
+{
 }
 
 int WebsocketResource::checkHeaders(HttpServerConnection& connection, HttpRequest& request, HttpResponse& response) {
-	if (sock != NULL) {
-		delete sock;
-	}
-
-	sock = new WebSocketConnection(&connection);
-	if (!sock->initialize(request, response)) {
+	WebSocketConnection* socket = new WebSocketConnection(&connection);
+	if (!socket->initialize(request, response)) {
 		debugf("Not a valid WebsocketRequest?");
 		return -1;
 	}
 
+	socket->setBinaryHandler(wsBinary);
+	socket->setMessageHandler(wsMessage);
+	socket->setConnectionHandler(wsConnect);
+	socket->setDisconnectionHandler(wsDisconnect);
+
 	connection.setTimeOut(USHRT_MAX); //Disable disconnection on connection idle (no rx/tx)
+	connection.userData = (void *)socket;
 
 // TODO: Re-Enable Command Executor...
-
-	memset(&parserSettings, 0, sizeof(parserSettings));
-	parserSettings.on_data_begin = staticOnDataBegin;
-	parserSettings.on_data_payload = staticOnDataPayload;
-	parserSettings.on_data_end = staticOnDataEnd;
-	parserSettings.on_control_begin = staticOnControlBegin;
-	parserSettings.on_control_payload = staticOnControlPayload;
-	parserSettings.on_control_end = staticOnControlEnd;
-
-	ws_parser_init(&parser, &parserSettings);
-	parser.user_data = (void*)this;
 
 	return 0;
 }
 
-int WebsocketResource::processWebSocketFrame(HttpServerConnection& connection, HttpRequest& request, char *at, int size) {
-	int rc = ws_parser_execute(&parser, (char *)at, size);
-	if (rc != WS_OK) {
-		debugf("WebSocketResource error: %d %s\n", rc, ws_parser_error(rc));
+int WebsocketResource::processData(HttpServerConnection& connection, HttpRequest& request, char *at, int size)
+{
+	WebSocketConnection *socket = (WebSocketConnection *)connection.userData;
+	if(socket == NULL) {
 		return -1;
 	}
 
-	return 0;
+	return socket->processFrame(connection, request, at, size);
 }
 
 void WebsocketResource::setConnectionHandler(WebSocketDelegate handler) {
@@ -75,53 +64,3 @@ void WebsocketResource::setBinaryHandler(WebSocketBinaryDelegate handler) {
 void WebsocketResource::setDisconnectionHandler(WebSocketDelegate handler) {
 	wsDisconnect = handler;
 }
-
-int WebsocketResource::staticOnDataBegin(void* userData, ws_frame_type_t type) {
-	WebsocketResource *resource = (WebsocketResource *)userData;
-	if (resource == NULL) {
-		return -1;
-	}
-
-	resource->frameType = type;
-
-	debugf("data_begin: %s\n",
-			type == WS_FRAME_TEXT ? "text" :
-			type == WS_FRAME_BINARY ? "binary" :
-			"?");
-
-	return WS_OK;
-}
-
-int WebsocketResource::staticOnDataPayload(void* userData, const char *at, size_t length) {
-	WebsocketResource *resource = (WebsocketResource *)userData;
-	if (resource == NULL) {
-		return -1;
-	}
-
-	if (resource->frameType == WS_FRAME_TEXT && resource->wsMessage) {
-		resource->wsMessage(*resource->sock, String(at, length));
-	} else if (resource->frameType == WS_FRAME_BINARY && resource->wsBinary) {
-		resource->wsBinary(*resource->sock, (uint8_t *) at, length);
-	}
-
-	return WS_OK;
-}
-
-int WebsocketResource::staticOnDataEnd(void* userData) {
-	return WS_OK;
-}
-
-int WebsocketResource::staticOnControlBegin(void* userData, ws_frame_type_t type) {
-	// TODO: ping / pong
-
-	return WS_OK;
-}
-
-int WebsocketResource::staticOnControlPayload(void* userData, const char *data, size_t length) {
-	return WS_OK;
-}
-
-int WebsocketResource::staticOnControlEnd(void* userData) {
-	return WS_OK;
-}
-

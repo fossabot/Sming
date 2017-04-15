@@ -10,14 +10,20 @@
 
 #include "../../TcpServer.h"
 #include "../HttpServerConnection.h"
-
 #include "../../Services/cWebsocket/websocket.h"
+extern "C" {
+	#include "../ws_parser/ws_parser.h"
+}
 
 //class CommandExecutor; // TODO: ...
 
 class WebSocketConnection;
 
 typedef Vector<WebSocketConnection> WebSocketsList;
+
+typedef Delegate<void(WebSocketConnection&)> WebSocketDelegate;
+typedef Delegate<void(WebSocketConnection&, const String&)> WebSocketMessageDelegate;
+typedef Delegate<void(WebSocketConnection&, uint8_t* data, size_t size)> WebSocketBinaryDelegate;
 
 class WebSocketConnection
 {
@@ -42,12 +48,37 @@ public:
 	WebSocketsList& getActiveWebSockets();
 // @end deprecated
 
+	void setConnectionHandler(WebSocketDelegate handler);
+	void setMessageHandler(WebSocketMessageDelegate handler);
+	void setBinaryHandler(WebSocketBinaryDelegate handler);
+	void setDisconnectionHandler(WebSocketDelegate handler);
+
+	int processFrame(HttpServerConnection& connection, HttpRequest& request, char *at, int size);
+
 protected:
 	bool is(HttpServerConnection* conn) { return connection == conn; };
+
+	static int staticOnDataBegin(void* userData, ws_frame_type_t type);
+	static int staticOnDataPayload(void* userData, const char *at, size_t length);
+	static int staticOnDataEnd(void* userData);
+	static int staticOnControlBegin(void* userData, ws_frame_type_t type);
+	static int staticOnControlPayload(void* userData, const char*, size_t length);
+	static int staticOnControlEnd(void* userData);
+
+protected:
+	WebSocketDelegate wsConnect = 0;
+	WebSocketMessageDelegate wsMessage = 0;
+	WebSocketBinaryDelegate wsBinary = 0;
+	WebSocketDelegate wsDisconnect = 0;
 
 private:
 	void *userData = nullptr;
 	HttpServerConnection* connection = nullptr;
+
+	ws_frame_type_t frameType = WS_FRAME_TEXT;
+
+	ws_parser_t parser;
+	ws_parser_callbacks_t parserSettings;
 
 // @deprecated
 	static WebSocketsList websocketList;

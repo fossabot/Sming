@@ -66,6 +66,9 @@ private:
 	static int IRAM_ATTR staticOnBody(http_parser *parser, const char *at, size_t length);
 	static int IRAM_ATTR staticOnMessageComplete(http_parser* parser);
 
+public:
+	void* userData = NULL; // << use to pass user data between requests
+
 private:
 	HttpConnectionState state;
 

@@ -46,10 +46,88 @@ bool WebSocketConnection::initialize(HttpRequest& request, HttpResponse& respons
 	response.setHeader("Upgrade", "websocket");
 	response.setHeader("Sec-WebSocket-Accept", secure);
 
+	connection->userData = (void *)this;
+
 	websocketList.addElement(*this);
+
+	memset(&parserSettings, 0, sizeof(parserSettings));
+	parserSettings.on_data_begin = staticOnDataBegin;
+	parserSettings.on_data_payload = staticOnDataPayload;
+	parserSettings.on_data_end = staticOnDataEnd;
+	parserSettings.on_control_begin = staticOnControlBegin;
+	parserSettings.on_control_payload = staticOnControlPayload;
+	parserSettings.on_control_end = staticOnControlEnd;
+
+	ws_parser_init(&parser, &parserSettings);
+	parser.user_data = (void*)this;
 
 	return true;
 }
+
+int WebSocketConnection::processFrame(HttpServerConnection& connection, HttpRequest& request, char *at, int size)
+{
+	int rc = ws_parser_execute(&parser, (char *)at, size);
+	if (rc != WS_OK) {
+		debugf("WebSocketResource error: %d %s\n", rc, ws_parser_error(rc));
+		return -1;
+	}
+
+	return 0;
+}
+
+int WebSocketConnection::staticOnDataBegin(void* userData, ws_frame_type_t type) {
+	WebSocketConnection *connection = (WebSocketConnection *)userData;
+	if (connection == NULL) {
+		return -1;
+	}
+
+	connection->frameType = type;
+
+	debugf("data_begin: %s\n",
+			type == WS_FRAME_TEXT ? "text" :
+			type == WS_FRAME_BINARY ? "binary" :
+			"?");
+
+	return WS_OK;
+}
+
+int WebSocketConnection::staticOnDataPayload(void* userData, const char *at, size_t length) {
+	WebSocketConnection *connection = (WebSocketConnection *)userData;
+	if (connection == NULL) {
+		return -1;
+	}
+
+	if (connection->frameType == WS_FRAME_TEXT && connection->wsMessage) {
+		connection->wsMessage(*connection, String(at, length));
+	} else if (connection->frameType == WS_FRAME_BINARY && connection->wsBinary) {
+		connection->wsBinary(*connection, (uint8_t *) at, length);
+	}
+
+	return WS_OK;
+}
+
+int WebSocketConnection::staticOnDataEnd(void* userData)
+{
+	return WS_OK;
+}
+
+int WebSocketConnection::staticOnControlBegin(void* userData, ws_frame_type_t type)
+{
+	// TODO: ping / pong
+
+	return WS_OK;
+}
+
+int WebSocketConnection::staticOnControlPayload(void* userData, const char *data, size_t length)
+{
+	return WS_OK;
+}
+
+int WebSocketConnection::staticOnControlEnd(void* userData)
+{
+	return WS_OK;
+}
+
 
 void WebSocketConnection::send(const char* message, int length, wsFrameType type)
 {
@@ -105,4 +183,25 @@ void WebSocketConnection::setUserData(void* userData)
 void* WebSocketConnection::getUserData()
 {
 	return userData;
+}
+
+
+void WebSocketConnection::setConnectionHandler(WebSocketDelegate handler)
+{
+	wsConnect = handler;
+}
+
+void WebSocketConnection::setMessageHandler(WebSocketMessageDelegate handler)
+{
+	wsMessage = handler;
+}
+
+void WebSocketConnection::setBinaryHandler(WebSocketBinaryDelegate handler)
+{
+	wsBinary = handler;
+}
+
+void WebSocketConnection::setDisconnectionHandler(WebSocketDelegate handler)
+{
+	wsDisconnect = handler;
 }

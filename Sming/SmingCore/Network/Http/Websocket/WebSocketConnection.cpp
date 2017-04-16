@@ -19,6 +19,8 @@ WebSocketConnection::WebSocketConnection(HttpServerConnection* conn)
 
 WebSocketConnection::~WebSocketConnection()
 {
+	websocketList.removeElement(*this);
+
 //#if ENABLE_CMD_EXECUTOR
 //	if (commandExecutor)
 //	{
@@ -34,6 +36,7 @@ bool WebSocketConnection::initialize(HttpRequest& request, HttpResponse& respons
 	if (version.toInt() != 13) // 1.3
 		return false;
 
+	state = eWSCS_Open;
 	String hash = request.getHeader("Sec-WebSocket-Key");
 	hash.trim();
 	hash = hash + secret;
@@ -60,6 +63,10 @@ bool WebSocketConnection::initialize(HttpRequest& request, HttpResponse& respons
 
 	ws_parser_init(&parser, &parserSettings);
 	parser.user_data = (void*)this;
+
+	if(wsConnect) {
+		wsConnect(*this);
+	}
 
 	return true;
 }
@@ -113,6 +120,18 @@ int WebSocketConnection::staticOnDataEnd(void* userData)
 
 int WebSocketConnection::staticOnControlBegin(void* userData, ws_frame_type_t type)
 {
+	WebSocketConnection *connection = (WebSocketConnection *)userData;
+	if (connection == NULL) {
+		return -1;
+	}
+
+	if (type == WS_FRAME_CLOSE) {
+		if(connection->wsDisconnect) {
+			connection->wsDisconnect(*connection);
+		}
+		connection->close();
+	}
+
 	// TODO: ping / pong
 
 	return WS_OK;
@@ -129,13 +148,20 @@ int WebSocketConnection::staticOnControlEnd(void* userData)
 }
 
 
-void WebSocketConnection::send(const char* message, int length, wsFrameType type)
+void WebSocketConnection::send(const char* message, int length, wsFrameType type /* = WS_TEXT_FRAME*/)
 {
 	uint8_t frameHeader[16] = {0};
 	size_t headSize = sizeof(frameHeader);
 	wsMakeFrame(nullptr, length, frameHeader, &headSize, type);
 	connection->send((const char* )frameHeader, (uint16_t )headSize);
 	connection->send((const char* )message, (uint16_t )length);
+}
+
+void WebSocketConnection::broadcast(const char* message, int length, wsFrameType type /* = WS_TEXT_FRAME*/)
+{
+	for (int i = 0; i < websocketList.count(); i++) {
+		websocketList[i].send(message, length, type);
+	}
 }
 
 void WebSocketConnection::sendString(const String& message)
@@ -171,8 +197,13 @@ WebSocketsList& WebSocketConnection::getActiveWebSockets()
 void WebSocketConnection::close()
 {
 	websocketList.removeElement((const WebSocketConnection)*this);
+	state = eWSCS_Closed;
 
-	connection->close();
+	if(wsDisconnect) {
+		wsDisconnect(*this);
+	}
+
+	connection->setTimeOut(1);
 }
 
 void WebSocketConnection::setUserData(void* userData)

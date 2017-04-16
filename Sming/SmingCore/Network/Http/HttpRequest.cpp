@@ -130,7 +130,7 @@ String HttpRequest::getQueryParameter(const String& parameterName, const String&
 			Vector<String> pair;
 			int count = splitString(parts[i], '=' , pair);
 			if(count != 2) {
-				debugf("getQueryParameter: Missing = in query string: %s", parts[i]);
+				debugf("getQueryParameter: Missing = in query string: %s", parts[i].c_str());
 				continue;
 			}
 			(*queryParams)[pair.at(0)] = pair.at(1); // TODO: name and value URI decoding...

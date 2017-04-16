@@ -25,6 +25,13 @@ typedef Delegate<void(WebSocketConnection&)> WebSocketDelegate;
 typedef Delegate<void(WebSocketConnection&, const String&)> WebSocketMessageDelegate;
 typedef Delegate<void(WebSocketConnection&, uint8_t* data, size_t size)> WebSocketBinaryDelegate;
 
+enum WsConnectionState
+{
+	eWSCS_Ready,
+	eWSCS_Open,
+	eWSCS_Closed
+};
+
 class WebSocketConnection
 {
 public:
@@ -34,6 +41,8 @@ public:
 	bool initialize(HttpRequest &request, HttpResponse &response);
 
 	virtual void send(const char* message, int length, wsFrameType type = WS_TEXT_FRAME);
+	void broadcast(const char* message, int length, wsFrameType type = WS_TEXT_FRAME);
+
 	void sendString(const String& message);
 	void sendBinary(const uint8_t* data, int size);
 //	void enableCommand(); // TODO: ...
@@ -72,6 +81,8 @@ protected:
 	WebSocketDelegate wsDisconnect = 0;
 
 private:
+	WsConnectionState state = eWSCS_Ready;
+
 	void *userData = nullptr;
 	HttpServerConnection* connection = nullptr;
 

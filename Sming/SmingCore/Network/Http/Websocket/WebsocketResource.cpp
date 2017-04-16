@@ -21,15 +21,15 @@ WebsocketResource::~WebsocketResource()
 
 int WebsocketResource::checkHeaders(HttpServerConnection& connection, HttpRequest& request, HttpResponse& response) {
 	WebSocketConnection* socket = new WebSocketConnection(&connection);
-	if (!socket->initialize(request, response)) {
-		debugf("Not a valid WebsocketRequest?");
-		return -1;
-	}
-
 	socket->setBinaryHandler(wsBinary);
 	socket->setMessageHandler(wsMessage);
 	socket->setConnectionHandler(wsConnect);
 	socket->setDisconnectionHandler(wsDisconnect);
+	if (!socket->initialize(request, response)) {
+		debugf("Not a valid WebsocketRequest?");
+		delete socket;
+		return -1;
+	}
 
 	connection.setTimeOut(USHRT_MAX); //Disable disconnection on connection idle (no rx/tx)
 	connection.userData = (void *)socket;

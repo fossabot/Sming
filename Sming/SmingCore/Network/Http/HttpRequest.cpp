@@ -20,8 +20,8 @@ HttpRequest::HttpRequest(const HttpRequest& value) {
 	*this = value;
 	method = value.method;
 	uri = value.uri;
-	if(value.requestHeaders.count()) {
-		setHeaders(value.requestHeaders);
+	if(value.headers.count()) {
+		setHeaders(value.headers);
 	}
 	headersCompletedDelegate = value.headersCompletedDelegate;
 	requestBodyDelegate = value.requestBodyDelegate;
@@ -68,13 +68,13 @@ HttpRequest* HttpRequest::setMethod(const HttpMethod method)
 
 HttpRequest* HttpRequest::setHeaders(const HttpHeaders& headers) {
 	for(int i=0; i < headers.count(); i++) {
-		this->requestHeaders[headers.keyAt(i)] = headers.valueAt(i);
+		this->headers[headers.keyAt(i)] = headers.valueAt(i);
 	}
 	return this;
 }
 
 HttpRequest* HttpRequest::setHeader(const String& name, const String& value) {
-	this->requestHeaders[name] = value; // TODO: add here name and/or value escaping.
+	this->headers[name] = value; // TODO: add here name and/or value escaping.
 	return this;
 }
 
@@ -100,11 +100,11 @@ HttpRequest* HttpRequest::setAuth(AuthAdapter *adapter) {
 #endif
 
 String HttpRequest::getHeader(const String& name) {
-	if(!requestHeaders.contains(name)) {
+	if(!headers.contains(name)) {
 		return String("");
 	}
 
-	return requestHeaders[name];
+	return headers[name];
 }
 
 String HttpRequest::getPostParameter(const String& name) {
@@ -253,8 +253,8 @@ String HttpRequest::toString() {
 
 	content += http_method_str(method) + String(" ") + uri.getPathWithQuery() + " HTTP/1.1\n";
 	content += "Host: " + uri.Host + ":" + uri.Port + "\n";
-	for(int i=0; i< requestHeaders.count(); i++) {
-		content += requestHeaders.keyAt(i) + ": " + requestHeaders.valueAt(i) + "\n";
+	for(int i=0; i< headers.count(); i++) {
+		content += headers.keyAt(i) + ": " + headers.valueAt(i) + "\n";
 	}
 
 	if(rawDataLength) {

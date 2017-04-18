@@ -54,7 +54,7 @@ public:
 	bool sendTemplate(TemplateFileStream* newTemplateInstance);
 
 	/**
-	 * brief Build and send JSON string
+	 * @brief Build and send JSON string
 	 *
 	 * @deprecated use response.sendDataStream(stream, MIME_JSON) instead
 	 */

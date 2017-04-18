@@ -8,7 +8,6 @@
 #include "WebSocketConnection.h"
 #include "../../Services/WebHelpers/aw-sha1.h"
 #include "../../Services/WebHelpers/base64.h"
-//#include "../../Services/CommandProcessing/CommandExecutor.h"
 
 WebSocketsList WebSocketConnection::websocketList;
 
@@ -20,13 +19,6 @@ WebSocketConnection::WebSocketConnection(HttpServerConnection* conn)
 WebSocketConnection::~WebSocketConnection()
 {
 	websocketList.removeElement(*this);
-
-//#if ENABLE_CMD_EXECUTOR
-//	if (commandExecutor)
-//	{
-//		delete commandExecutor;
-//	}
-//#endif
 }
 
 bool WebSocketConnection::initialize(HttpRequest& request, HttpResponse& response)
@@ -173,16 +165,6 @@ void WebSocketConnection::sendBinary(const uint8_t* data, int size)
 {
 	send((char*)data, size, WS_BINARY_FRAME);
 }
-
-//void WebSocketConnection::enableCommand()
-//{
-//#if ENABLE_CMD_EXECUTOR
-//	if (!commandExecutor)
-//	{
-//		commandExecutor = new CommandExecutor(this);
-//	}
-//#endif
-//}
 
 bool  WebSocketConnection::operator==(const WebSocketConnection &rhs) const
 {

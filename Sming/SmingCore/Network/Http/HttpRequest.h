@@ -130,7 +130,7 @@ public:
 public:
 	URL uri;
 	HttpMethod method = HTTP_GET;
-	HttpHeaders requestHeaders;
+	HttpHeaders headers;
 
 	HttpParams postParams;
 

@@ -112,7 +112,7 @@ int HttpServerConnection::staticOnMessageComplete(http_parser* parser)
 	// we are finished with this request
 	int hasError = 0;
 	if(HTTP_PARSER_ERRNO(parser) != HPE_OK) {
-		connection->sendError(http_errno_name(HTTP_PARSER_ERRNO(parser))); //TODO: better error processing...
+		connection->sendError(http_errno_name(HTTP_PARSER_ERRNO(parser)));
 		return 0;
 	}
 
@@ -121,8 +121,6 @@ int HttpServerConnection::staticOnMessageComplete(http_parser* parser)
 	}
 
 	connection->send();
-
-	// TODO: Improve the error handling here...
 
 	if(connection->request.responseStream != NULL) {
 		connection->request.responseStream->close();
@@ -234,7 +232,7 @@ err_t HttpServerConnection::onReceive(pbuf *buf)
 {
 	if (buf == NULL)
 	{
-		return TcpConnection::onReceive(buf); // TODO: close the connection on TCP error.
+		return TcpConnection::onReceive(buf); // close the connection on TCP error.
 	}
 
 	pbuf *cur = buf;
@@ -322,7 +320,7 @@ void HttpServerConnection::onReadyToSendData(TcpConnectionEvent sourceEvent)
 		}
 
 		if(!response.headers.contains("Connection")) {
-			if(request.requestHeaders.contains("Connection") && request.requestHeaders["Connection"] == "close") {
+			if(request.headers.contains("Connection") && request.headers["Connection"] == "close") {
 				// the other side requests closing of the tcp connection...
 				response.headers["Connection"] = "close";
 			}

@@ -15,8 +15,6 @@ extern "C" {
 	#include "../ws_parser/ws_parser.h"
 }
 
-//class CommandExecutor; // TODO: ...
-
 class WebSocketConnection;
 
 typedef Vector<WebSocketConnection> WebSocketsList;
@@ -94,8 +92,6 @@ private:
 // @deprecated
 	static WebSocketsList websocketList;
 // @end deprecated
-
-//	CommandExecutor* commandExecutor = nullptr; // TODO: ...
 };
 
 #endif /* SMINGCORE_NETWORK_WEBSOCKETCONNECTION_H_ */

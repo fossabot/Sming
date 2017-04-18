@@ -384,28 +384,28 @@ void HttpConnection::send(HttpRequest* request) {
 	sendString(http_method_str(request->method) + String(" ") + request->uri.getPathWithQuery() + " HTTP/1.1\r\nHost: " + request->uri.Host + "\r\n");
 
 	// Adjust the content-length
-	request->requestHeaders["Content-Length"] = "0";
+	request->headers["Content-Length"] = "0";
 	if(request->rawDataLength) {
-		request->requestHeaders["Content-Length"] = String(request->rawDataLength);
+		request->headers["Content-Length"] = String(request->rawDataLength);
 	}
 	else if (request->stream != NULL && request->stream->length() > -1) {
-		request->requestHeaders["Content-Length"] = String(request->stream->length());
+		request->headers["Content-Length"] = String(request->stream->length());
 	}
 
 	// TODO: represent the post params as stream ...
 
 
-	if(!request->requestHeaders.contains("Content-Length")) {
-		request->requestHeaders["Transfer-Encoding"] = "chunked";
+	if(!request->headers.contains("Content-Length")) {
+		request->headers["Transfer-Encoding"] = "chunked";
 	}
 
-	if(request->postParams.count() && !request->requestHeaders.contains("Content-Type")) {
-		request->requestHeaders["Content-Type"] = MIME_FORM_URL_ENCODED;
+	if(request->postParams.count() && !request->headers.contains("Content-Type")) {
+		request->headers["Content-Type"] = MIME_FORM_URL_ENCODED;
 	}
 
-	for (int i = 0; i < request->requestHeaders.count(); i++)
+	for (int i = 0; i < request->headers.count(); i++)
 	{
-		String write = request->requestHeaders.keyAt(i) + ": " + request->requestHeaders.valueAt(i) + "\r\n";
+		String write = request->headers.keyAt(i) + ": " + request->headers.valueAt(i) + "\r\n";
 		sendString(write.c_str());
 	}
 	sendString("\r\n");

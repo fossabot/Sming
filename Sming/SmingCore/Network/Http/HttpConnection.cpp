@@ -400,7 +400,7 @@ void HttpConnection::send(HttpRequest* request) {
 	}
 
 	if(request->postParams.count() && !request->headers.contains("Content-Type")) {
-		request->headers["Content-Type"] = MIME_FORM_URL_ENCODED;
+		request->headers["Content-Type"] = ContentType::toString(MIME_FORM_URL_ENCODED);
 	}
 
 	for (int i = 0; i < request->headers.count(); i++)

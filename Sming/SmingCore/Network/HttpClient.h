@@ -100,7 +100,7 @@ client->sendRequest("https://attachix.com/js/e.js", onRequestComplete);
 
 client->sendRequest(HTTP_GET, "https://attachix.com/update/check", requestHeaders, NULL, [](HttpClient& client, bool successful) -> void {
 	if(!successful) {
-		// TODO:
+		// do something smart...
 		return;
 	}
 });

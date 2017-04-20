@@ -117,14 +117,14 @@ int WebSocketConnection::staticOnControlBegin(void* userData, ws_frame_type_t ty
 		return -1;
 	}
 
+	connection->controlFrameType = type;
+
 	if (type == WS_FRAME_CLOSE) {
 		if(connection->wsDisconnect) {
 			connection->wsDisconnect(*connection);
 		}
 		connection->close();
 	}
-
-	// TODO: ping / pong
 
 	return WS_OK;
 }
@@ -136,6 +136,16 @@ int WebSocketConnection::staticOnControlPayload(void* userData, const char *data
 
 int WebSocketConnection::staticOnControlEnd(void* userData)
 {
+	WebSocketConnection *connection = (WebSocketConnection *)userData;
+	if (connection == NULL) {
+		return -1;
+	}
+
+	if(connection->controlFrameType == WS_FRAME_PING) {
+		// TODO: add control frame payload processing...
+		connection->send((const char* )NULL, 0, WS_PONG_FRAME);
+	}
+
 	return WS_OK;
 }
 
@@ -146,7 +156,9 @@ void WebSocketConnection::send(const char* message, int length, wsFrameType type
 	size_t headSize = sizeof(frameHeader);
 	wsMakeFrame(nullptr, length, frameHeader, &headSize, type);
 	connection->send((const char* )frameHeader, (uint16_t )headSize);
-	connection->send((const char* )message, (uint16_t )length);
+	if(length > 0) {
+		connection->send((const char* )message, (uint16_t )length);
+	}
 }
 
 void WebSocketConnection::broadcast(const char* message, int length, wsFrameType type /* = WS_TEXT_FRAME*/)

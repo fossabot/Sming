@@ -34,7 +34,7 @@
 #include "../http-parser/http_parser.h"
 
 /**
- * TODO: For the moment the name is very misleading.
+ * WARNING: For the moment the name "SimpleConcurrentQueue" is very misleading.
  */
 template<typename T, int rawSize>
 class SimpleConcurrentQueue: public FIFO<T, rawSize> {

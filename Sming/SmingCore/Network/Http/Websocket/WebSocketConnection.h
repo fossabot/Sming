@@ -43,7 +43,6 @@ public:
 
 	void sendString(const String& message);
 	void sendBinary(const uint8_t* data, int size);
-//	void enableCommand(); // TODO: ...
 	void close();
 
 	void setUserData(void* userData);
@@ -85,6 +84,7 @@ private:
 	HttpServerConnection* connection = nullptr;
 
 	ws_frame_type_t frameType = WS_FRAME_TEXT;
+	ws_frame_type_t controlFrameType = WS_FRAME_PING;
 
 	ws_parser_t parser;
 	ws_parser_callbacks_t parserSettings;

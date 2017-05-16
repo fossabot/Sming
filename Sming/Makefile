@@ -175,6 +175,13 @@ THIRD_PARTY_DATA += third-party/ws_parser/Makefile
 MODULES              += third-party/ws_parser/
 EXTRA_INCDIR     += third-party/ws_parser/
 
+# => multipart-parser-c
+ifeq ($(ENABLE_HTTP_SERVER_MULTIPART), 1)
+    THIRD_PARTY_DATA += third-party/multipart-parser/Makefile
+    MODULES              += third-party/multipart-parser/
+    EXTRA_INCDIR     += third-party/multipart-parser/
+endif
+
 # => esp-gdbstub
 ifeq ($(ENABLE_GDB), 1)
 	THIRD_PARTY_DATA += third-party/esp-gdbstub/Makefile
@@ -243,6 +250,10 @@ else
 endif
 #Append debug options
 CFLAGS += -DCUST_FILE_BASE=$$* -DDEBUG_VERBOSE_LEVEL=$(DEBUG_VERBOSE_LEVEL) -DDEBUG_PRINT_FILENAME_AND_LINE=$(DEBUG_PRINT_FILENAME_AND_LINE)
+
+ifeq ($(ENABLE_HTTP_SERVER_MULTIPART),1)
+	CFLAGS += -DENABLE_HTTP_SERVER_MULTIPART=1
+endif
 
 CXXFLAGS	= $(CFLAGS) -fno-rtti -fno-exceptions -std=c++11 -felide-constructors
 

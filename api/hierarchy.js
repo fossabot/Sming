@@ -3,7 +3,6 @@ var hierarchy =
     [ "Adafruit_NeoPixel", "classAdafruit__NeoPixel.html", null ],
     [ "AM2321", "classAM2321.html", null ],
     [ "APA102", "classAPA102.html", null ],
-    [ "ArduCAM", "classArduCAM.html", null ],
     [ "AtClient", "classAtClient.html", null ],
     [ "AtCommand", "structAtCommand.html", null ],
     [ "AuthAdapter", "classAuthAdapter.html", [
@@ -28,14 +27,77 @@ var hierarchy =
       ] ],
       [ "FILO< T, rawSize >", "classFILO.html", null ]
     ] ],
+    [ "Countable< AtCommand >", "classCountable.html", [
+      [ "FIFO< AtCommand, rawSize >", "classFIFO.html", [
+        [ "SimpleQueue< AtCommand, 10 >", "classSimpleQueue.html", null ]
+      ] ]
+    ] ],
+    [ "Countable< ChannelPWM >", "classCountable.html", [
+      [ "Vector< ChannelPWM >", "classVector.html", null ]
+    ] ],
+    [ "Countable< Delegate >", "classCountable.html", [
+      [ "Vector< Delegate >", "classVector.html", null ]
+    ] ],
     [ "Countable< Element >", "classCountable.html", [
       [ "Vector< Element >", "classVector.html", null ]
+    ] ],
+    [ "Countable< HttpRequest * >", "classCountable.html", [
+      [ "FIFO< HttpRequest *, rawSize >", "classFIFO.html", [
+        [ "SimpleConcurrentQueue< HttpRequest *, HTTP_REQUEST_POOL_SIZE >", "classSimpleConcurrentQueue.html", null ]
+      ] ]
+    ] ],
+    [ "Countable< ISystemReadyHandler * >", "classCountable.html", [
+      [ "Vector< ISystemReadyHandler * >", "classVector.html", null ]
+    ] ],
+    [ "Countable< rBootHttpUpdateItem >", "classCountable.html", [
+      [ "Vector< rBootHttpUpdateItem >", "classVector.html", null ]
+    ] ],
+    [ "Countable< ServoChannel * >", "classCountable.html", [
+      [ "Vector< ServoChannel * >", "classVector.html", null ]
     ] ],
     [ "DateTime", "classDateTime.html", null ],
     [ "DebugOuputOptions", "structDebugOuputOptions.html", null ],
     [ "decode_results", "classdecode__results.html", null ],
+    [ "Delegate< class >", "classDelegate.html", null ],
+    [ "Delegate< bool(AtClient &atClient, Stream &source)>", "classDelegate.html", null ],
+    [ "Delegate< bool(AtClient &atClient, String &reply)>", "classDelegate.html", null ],
+    [ "Delegate< bool(TcpClient &client, char *data, int size)>", "classDelegate.html", null ],
+    [ "Delegate< int(HttpConnection &client, bool successful)>", "classDelegate.html", null ],
+    [ "Delegate< int(HttpConnection &client, const char *at, size_t length)>", "classDelegate.html", null ],
+    [ "Delegate< int(HttpConnection &client, HttpHeaders &headers)>", "classDelegate.html", null ],
+    [ "Delegate< int(HttpServerConnection &, HttpRequest &, HttpResponse &)>", "classDelegate.html", null ],
+    [ "Delegate< int(HttpServerConnection &connection, HttpRequest &, char *at, int length)>", "classDelegate.html", null ],
+    [ "Delegate< int(HttpServerConnection &connection, HttpRequest &, const char *at, int length)>", "classDelegate.html", null ],
     [ "Delegate< ReturnType(ParamsList...)>", "classDelegate_3_01ReturnType_07ParamsList_8_8_8_08_4.html", null ],
+    [ "Delegate< void()>", "classDelegate.html", null ],
+    [ "Delegate< void(bool, BssList)>", "classDelegate.html", null ],
+    [ "Delegate< void(char dbgChar)>", "classDelegate.html", null ],
+    [ "Delegate< void(HttpRequest &, const char *at, int length)>", "classDelegate.html", null ],
+    [ "Delegate< void(HttpRequest &, HttpResponse &)>", "classDelegate.html", null ],
+    [ "Delegate< void(int16_t, uint8_t[6])>", "classDelegate.html", null ],
+    [ "Delegate< void(IPAddress, IPAddress, IPAddress)>", "classDelegate.html", null ],
+    [ "Delegate< void(NtpClient &client, time_t ntpTime)>", "classDelegate.html", null ],
+    [ "Delegate< void(rBootHttpUpdate &client, bool result)>", "classDelegate.html", null ],
+    [ "Delegate< void(sc_status status, void *pdata)>", "classDelegate.html", null ],
+    [ "Delegate< void(Stream &source, char arrivedChar, uint16_t availableCharsCount)>", "classDelegate.html", null ],
+    [ "Delegate< void(String commandLine, CommandOutput *commandOutput)>", "classDelegate.html", null ],
+    [ "Delegate< void(String topic, String message)>", "classDelegate.html", null ],
+    [ "Delegate< void(String, uint8_t, uint8_t[6], uint8_t)>", "classDelegate.html", null ],
+    [ "Delegate< void(TcpClient &client, bool successful)>", "classDelegate.html", null ],
+    [ "Delegate< void(TcpClient &client, TcpConnectionEvent sourceEvent)>", "classDelegate.html", null ],
+    [ "Delegate< void(TcpClient *client)>", "classDelegate.html", null ],
+    [ "Delegate< void(UdpConnection &connection, char *data, int size, IPAddress remoteIP, uint16_t remotePort)>", "classDelegate.html", null ],
+    [ "Delegate< void(uint8_t, uint8_t)>", "classDelegate.html", null ],
+    [ "Delegate< void(uint8_t[6], uint8_t)>", "classDelegate.html", null ],
+    [ "Delegate< void(WebsocketClient &wsClient, bool successful)>", "classDelegate.html", null ],
+    [ "Delegate< void(WebsocketClient &wsClient, const String message)>", "classDelegate.html", null ],
+    [ "Delegate< void(WebsocketClient &wsClient, uint8_t *data, size_t size)>", "classDelegate.html", null ],
+    [ "Delegate< void(WebsocketClient &wsClient, wsMode Mode)>", "classDelegate.html", null ],
+    [ "Delegate< void(WebSocketConnection &)>", "classDelegate.html", null ],
+    [ "Delegate< void(WebSocketConnection &, const String &)>", "classDelegate.html", null ],
+    [ "Delegate< void(WebSocketConnection &, uint8_t *data, size_t size)>", "classDelegate.html", null ],
     [ "DHT", "classDHT.html", null ],
+    [ "DIR", "structDIR.html", null ],
     [ "DNSHeader", "structDNSHeader.html", null ],
     [ "DnsLookup", "structDnsLookup.html", null ],
     [ "DriverPWM", "classDriverPWM.html", null ],
@@ -43,14 +105,23 @@ var hierarchy =
     [ "DS3232RTC", "classDS3232RTC.html", null ],
     [ "ESP01_Description", "classESP01__Description.html", null ],
     [ "EspDigitalPin", "structEspDigitalPin.html", null ],
+    [ "FATFS", "structFATFS.html", null ],
+    [ "FIL", "structFIL.html", null ],
+    [ "FILINFO", "structFILINFO.html", null ],
     [ "FormUrlParserState", "structFormUrlParserState.html", null ],
     [ "gesture_data_type", "structgesture__data__type.html", null ],
     [ "Hardware_Timer", "classHardware__Timer.html", null ],
     [ "HardwarePWM", "classHardwarePWM.html", null ],
     [ "HashMap< K, V >", "classHashMap.html", null ],
+    [ "HashMap< String, CommandDelegate >", "classHashMap.html", null ],
+    [ "HashMap< String, HttpBodyParserDelegate >", "classHashMap.html", null ],
+    [ "HashMap< String, HttpConnection * >", "classHashMap.html", null ],
+    [ "HashMap< String, HttpResource * >", "classHashMap.html", null ],
+    [ "HashMap< String, SimpleConcurrentQueue * >", "classHashMap.html", null ],
     [ "HashMap< String, String >", "classHashMap.html", [
       [ "TemplateVariables", "classTemplateVariables.html", null ]
     ] ],
+    [ "HashMap< uint16_t, Delegate >", "classHashMap.html", null ],
     [ "HexDump", "classHexDump.html", null ],
     [ "RCSwitch::HighLow", "structRCSwitch_1_1HighLow.html", null ],
     [ "HMC5883L", "classHMC5883L.html", null ],
@@ -97,6 +168,7 @@ var hierarchy =
     ] ],
     [ "MCP", "classMCP.html", null ],
     [ "MCP23017", "classMCP23017.html", null ],
+    [ "MethodCaller< class >", "classMethodCaller.html", null ],
     [ "MFRC522", "classMFRC522.html", null ],
     [ "MFRC522::MIFARE_Key", "structMFRC522_1_1MIFARE__Key.html", null ],
     [ "MirfSpiDriver", "classMirfSpiDriver.html", [
@@ -141,7 +213,6 @@ var hierarchy =
     [ "RF24", "classRF24.html", null ],
     [ "RtcClass", "classRtcClass.html", null ],
     [ "RtcData", "structRtcData.html", null ],
-    [ "sensor_reg", "structsensor__reg.html", null ],
     [ "Servo", "classServo.html", null ],
     [ "ServoChannel", "classServoChannel.html", null ],
     [ "Si4432", "classSi4432.html", null ],

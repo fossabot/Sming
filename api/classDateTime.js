@@ -3,8 +3,6 @@ var classDateTime =
     [ "DateTime", "classDateTime.html#a3ccfb87f7a2e9683b91964e32d907161", null ],
     [ "DateTime", "classDateTime.html#a3c663103e819ac0925be93b06a35931b", null ],
     [ "addMilliseconds", "classDateTime.html#a60d049362b1d16cbe9ceae334ecd56d5", null ],
-    [ "convertFromUnixTime", "classDateTime.html#abe6e5aec96f99fdc4862b15c86c9edc2", null ],
-    [ "convertToUnixTime", "classDateTime.html#a37d374c4f572d23522f1eefe98132cc5", null ],
     [ "isNull", "classDateTime.html#a942983c6d456157328d2efa10e06b9fb", null ],
     [ "operator time_t", "classDateTime.html#a71771ccc110639ab07f7d91a81a62287", null ],
     [ "parseHttpDate", "classDateTime.html#aafc5f31a9aab859d6e12553621ed7568", null ],

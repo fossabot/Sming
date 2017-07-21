@@ -1,5 +1,7 @@
 var classRCSwitch =
 [
+    [ "HighLow", "structRCSwitch_1_1HighLow.html", "structRCSwitch_1_1HighLow" ],
+    [ "Protocol", "structRCSwitch_1_1Protocol.html", "structRCSwitch_1_1Protocol" ],
     [ "RCSwitch", "classRCSwitch.html#ae026413bd1284bbe5561f5ca0c94d322", null ],
     [ "disableTransmit", "classRCSwitch.html#a270c160db14eda2b0f28f76d7df3f361", null ],
     [ "enableTransmit", "classRCSwitch.html#a98e2f832045d0caae21ddff5cba7d483", null ],

@@ -10,5 +10,5 @@ var classSPISoft =
     [ "transfer", "classSPISoft.html#a33416cb8a966c9a5378056e0d4a34779", null ],
     [ "transfer", "classSPISoft.html#af278fc0c4ff05a66c26006751fde2b65", null ],
     [ "transfer16", "classSPISoft.html#a2f5d7bae1fa1d1f77bcf300f2bfc4977", null ],
-    [ "SPIDefaultSettings", "group__base__spi.html#gab60522af0ac50ba40d9047c99743141d", null ]
+    [ "SPIDefaultSettings", "classSPISoft.html#gab60522af0ac50ba40d9047c99743141d", null ]
 ];

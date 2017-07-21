@@ -14,7 +14,6 @@ var classUdpConnection =
     [ "sendStringTo", "classUdpConnection.html#af6eaf8ee55a8dde7d77f0e3225692004", null ],
     [ "sendStringTo", "classUdpConnection.html#a35476749157e6c215d9925ecaafcdd77", null ],
     [ "sendTo", "classUdpConnection.html#a29a5600b42521146355ccef46ac5612a", null ],
-    [ "staticOnReceive", "classUdpConnection.html#a004650ad66ef9b982134dea65009af72", null ],
     [ "onDataCallback", "classUdpConnection.html#a003c1be27daddb5474fc2d920936f277", null ],
     [ "udp", "classUdpConnection.html#aacbf877beadcb472cf52a29670ba514e", null ]
 ];

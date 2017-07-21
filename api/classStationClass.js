@@ -31,8 +31,5 @@ var classStationClass =
     [ "setIP", "group__wifi__sta.html#gad7419d830a45e093079ddad59e7b8577", null ],
     [ "smartConfigStart", "group__wifi__sta.html#ga3768507a586c10afc6102cf6e2e99df7", null ],
     [ "smartConfigStop", "group__wifi__sta.html#ga2752e7f3abdfff19c00b04330e99950e", null ],
-    [ "startScan", "group__wifi__sta.html#ga7fb5950d72a7180a527f45e0b629c69d", null ],
-    [ "staticCheckConnection", "group__wifi__sta.html#ga9326abda8747054aa3c04128c524bcd3", null ],
-    [ "staticScanCompleted", "group__wifi__sta.html#gaa251f8f82046cce9b5c0b7b09c294771", null ],
-    [ "staticSmartConfigCallback", "group__wifi__sta.html#ga0800d812d6f53ec85e774af65a1f37f1", null ]
+    [ "startScan", "group__wifi__sta.html#ga7fb5950d72a7180a527f45e0b629c69d", null ]
 ];

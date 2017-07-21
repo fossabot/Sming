@@ -1,7 +1,7 @@
 var classFIFO =
 [
     [ "FIFO", "classFIFO.html#aaf6daeabf2f6a62f11db74f3aaa11c7f", null ],
-    [ "at", "classCountable.html#a34441ee721d3accbb7169dc04aadaa5f", null ],
+    [ "at", "classFIFO.html#a34441ee721d3accbb7169dc04aadaa5f", null ],
     [ "count", "classFIFO.html#a822ba9631279ff47cd843a5273a101f8", null ],
     [ "dequeue", "classFIFO.html#a8cbc6e8fe109581b7dad5bc0b69f5326", null ],
     [ "enqueue", "classFIFO.html#aae0f318e05930819896ad50075a2e3b7", null ],

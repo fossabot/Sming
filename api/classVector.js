@@ -7,7 +7,7 @@ var classVector =
     [ "add", "classVector.html#ad22369e1452724ab5f11a1db39b2a3f7", null ],
     [ "addElement", "classVector.html#a50fcfbcb8e5ef8fcf2f31555d19fcdc8", null ],
     [ "addElement", "classVector.html#a9cb67e11fa4b361648b7cd0f845168b2", null ],
-    [ "at", "classVector.html#a34441ee721d3accbb7169dc04aadaa5f", null ],
+    [ "at", "classCountable.html#a34441ee721d3accbb7169dc04aadaa5f", null ],
     [ "capacity", "classVector.html#a792f454110aa9e657f2f56d42e94de9e", null ],
     [ "clear", "classVector.html#a58943927e42eb108b6a71f9ddac2d71c", null ],
     [ "contains", "classVector.html#acf9315fe305c1a9835fcd792ecdf9e21", null ],

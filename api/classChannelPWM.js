@@ -6,5 +6,6 @@ var classChannelPWM =
     [ "config", "classChannelPWM.html#ac32b4f5a3eb4a4fbd2d462df309553b0", null ],
     [ "high", "classChannelPWM.html#a2d9b9cb9b2817d34207f0f2da836a277", null ],
     [ "id", "classChannelPWM.html#a24a1819242da35acaaefbbfdff8c2ece", null ],
-    [ "initialize", "classChannelPWM.html#a9db74b3292965d910aaeb2b0ecf59d61", null ]
+    [ "initialize", "classChannelPWM.html#a9db74b3292965d910aaeb2b0ecf59d61", null ],
+    [ "processingStatic", "classChannelPWM.html#a133d2638c1c9ebbbde0260ef18b82cb0", null ]
 ];

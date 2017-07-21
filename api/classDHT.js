@@ -2,6 +2,8 @@ var classDHT =
 [
     [ "DHT", "classDHT.html#ab3ccf9f5d283ad420364548c8bbdf243", null ],
     [ "begin", "classDHT.html#a4eded4fffc7cb3f98606afd98c957f01", null ],
+    [ "convertCtoF", "classDHT.html#afea5fd8e00b92f8c2dea616bb5f26f0b", null ],
+    [ "convertFtoC", "classDHT.html#a8b6d996b194e7a5f0c50fb4179e4a7ce", null ],
     [ "getComfortProfile", "classDHT.html#a602802b371dc6c3465f5ff2672cdb764", null ],
     [ "getComfortRatio", "classDHT.html#a6b45d1d56cb0431b3ec750c8c729b0e5", null ],
     [ "getDewPoint", "classDHT.html#aa6126d8ddcd8f9cd26806fe4f6fe7434", null ],

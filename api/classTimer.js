@@ -9,6 +9,7 @@ var classTimer =
     [ "initializeUs", "group__timer.html#ga169a2de229755b50ffcd4d35963c4ffa", null ],
     [ "initializeUs", "group__timer.html#gabdf713dd3a808a56a2cdc5029c73f3c1", null ],
     [ "isStarted", "group__timer.html#ga2c03be883cf950d14e058b4205f1526e", null ],
+    [ "processing", "group__timer.html#ga31894e97b61051028fe3f30e4185cb5c", null ],
     [ "restart", "group__timer.html#ga085227af4cf9878dc8755ea0aecf347b", null ],
     [ "setCallback", "group__timer.html#ga64d1f28c958588a7dd9ff6991049d1a9", null ],
     [ "setCallback", "group__timer.html#ga0563e334d6e907c677ba033490355ed2", null ],
@@ -16,5 +17,6 @@ var classTimer =
     [ "setIntervalUs", "group__timer.html#ga2d5674483a37b68330b865dedefda102", null ],
     [ "start", "group__timer.html#gad32c8ca7c0ab22d2ed2337e43a0e925d", null ],
     [ "startOnce", "group__timer.html#ga79112b78bb1930a3350858c15221ac97", null ],
-    [ "stop", "group__timer.html#ga6dbdb112577bdd9db5019d3bf81bbc1c", null ]
+    [ "stop", "group__timer.html#ga6dbdb112577bdd9db5019d3bf81bbc1c", null ],
+    [ "tick", "group__timer.html#ga5d959aed5bb365e698165458440c84c1", null ]
 ];

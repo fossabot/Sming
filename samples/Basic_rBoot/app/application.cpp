@@ -97,7 +97,7 @@ void ShowInfo() {
     //Serial.printf("SPI Flash Size: %d\r\n", (1 << ((spi_flash_get_id() >> 16) & 0xff)));
 }
 
-void serialCallBack(Stream& stream, char arrivedChar, unsigned short availableCharsCount) {
+void serialCallBack(SerialStream& stream, char arrivedChar, unsigned short availableCharsCount) {
 	int pos = stream.indexOf('\n');
 	if(pos > -1) {
 		char str[pos + 1];

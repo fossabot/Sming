@@ -5,7 +5,7 @@
  * All files of the Sming Core are provided under the LGPL v3 license.
  ****/
 
-/**	@defgroup serial Hardware serial
+/**	@ingroup serial Hardware serial
  *	@brief	Hardware serial UARTs
  *  @{
  */
@@ -14,9 +14,9 @@
 #define _HARDWARESERIAL_H_
 
 #include "../Wiring/WiringFrameworkDependencies.h"
-#include "../Wiring/Stream.h"
 #include "../SmingCore/Delegate.h"
 #include "../Services/CommandProcessing/CommandProcessingIncludes.h"
+#include "SerialStream.h"
 
 #define UART_ID_0   0 ///< ID of UART 0
 #define UART_ID_1   1 ///< ID of UART 1
@@ -33,7 +33,7 @@
  *  @param  availableCharsCount Quantity of chars available stream in receive buffer
  */
 // Delegate constructor usage: (&YourClass::method, this)
-typedef Delegate<void(Stream &source, char arrivedChar, uint16_t availableCharsCount)> StreamDataReceivedDelegate;
+typedef Delegate<void(SerialStream &source, char arrivedChar, uint16_t availableCharsCount)> StreamDataReceivedDelegate;
 
 class CommandExecutor;
 
@@ -78,7 +78,7 @@ enum SerialMode {
 };
 
 /// Hardware serial class
-class HardwareSerial : public Stream
+class HardwareSerial : public SerialStream
 {
 public:
     /** @brief  Create instance of a hardware serial port object

@@ -25,7 +25,7 @@
 
 class AtClient;
 
-typedef Delegate<bool(AtClient& atClient, Stream& source)> AtReceiveCallback; // << If the callback returns true then this means that we have
+typedef Delegate<bool(AtClient& atClient, SerialStream& source)> AtReceiveCallback; // << If the callback returns true then this means that we have
 																			  //     finished successfully processing the command
 typedef Delegate<bool(AtClient& atClient, String& reply)> AtCompleteCallback; // << If the callback returns true then this means that we have
 																			  //     finished successfully processing the command
@@ -129,7 +129,7 @@ protected:
 	/**
 	 * @brief Processes response data.
 	*/
-	virtual void processor(Stream &source, char arrivedChar, uint16_t availableCharsCount);
+	virtual void processor(SerialStream &source, char arrivedChar, uint16_t availableCharsCount);
 
 private:
 	SimpleQueue<AtCommand, 10> queue; // << Queue for the commands to be executed

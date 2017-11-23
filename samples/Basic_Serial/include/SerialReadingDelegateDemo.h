@@ -2,12 +2,12 @@
 #define INCLUDE_SERIALREADINGDELEGATEDEMO_H_
 
 //*** Example of global callback routine
-void onDataCallback(Stream& stream, char arrivedChar, unsigned short availableCharsCount)
+void onDataCallback(SerialStream& stream, char arrivedChar, unsigned short availableCharsCount)
 {
 	Serial.printf("Char: %d, Count: %d\n", (uint8_t)arrivedChar, availableCharsCount);
 }
 
-void echoCallback(Stream& stream, char arrivedChar, unsigned short availableCharsCount)
+void echoCallback(SerialStream& stream, char arrivedChar, unsigned short availableCharsCount)
 {
 	stream.write(arrivedChar);
 }
@@ -22,7 +22,7 @@ public:
 		debugf("hwsDelegateDemo instantiated, waiting for data");
 	};
 
-	void onData(Stream& stream, char arrivedChar, unsigned short availableCharsCount)
+	void onData(SerialStream& stream, char arrivedChar, unsigned short availableCharsCount)
 	{
 		Serial.print("Class Delegate Demo Time = ");
 		Serial.print(micros());
